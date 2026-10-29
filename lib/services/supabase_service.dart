@@ -2,9 +2,7 @@
 //
 // Servicio centralizado de Supabase implementado como Singleton.
 //
-// ⚠️  Las credenciales de abajo son FICTICIAS (placeholders).
-//     Reemplazar con las credenciales reales del proyecto Supabase.
-//     En producción deben provenir de variables de entorno.
+// ⚠️  Las credenciales se inyectan en compilación/ejecución mediante .env (--dart-define-from-file=.env)
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,6 +23,13 @@ class SupabaseService {
   ///
   /// Debe invocarse una sola vez en [main()] antes de [runApp()].
   static Future<void> initialize() async {
+    if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
+      debugPrint(
+        '[SupabaseService] ⚠️ ERROR CRÍTICO: SUPABASE_URL o SUPABASE_ANON_KEY no están definidas.\n'
+        'Asegúrate de pasar --dart-define-from-file=.env al compilar/ejecutar la aplicación.',
+      );
+    }
+
     try {
       await Supabase.initialize(
         url: _supabaseUrl,
