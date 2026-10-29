@@ -139,65 +139,74 @@ class LoteCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Fila inferior: Badge de etapa actual y Botones de Acción
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 10,
               children: [
                 EtapaBadge(etapa: etapa),
-                const Spacer(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Botón: Ver Historial (Criterio 3)
+                    OutlinedButton.icon(
+                      onPressed: () => HistorialEtapasSheet.show(context, lote),
+                      icon: const Icon(Icons.history_rounded, size: 16),
+                      label: const Text('Historial', style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        minimumSize: const Size(0, 36),
+                        side: BorderSide(color: Colors.grey.shade300),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
 
-                // Botón: Ver Historial (Criterio 3)
-                OutlinedButton.icon(
-                  onPressed: () => HistorialEtapasSheet.show(context, lote),
-                  icon: const Icon(Icons.history_rounded, size: 16),
-                  label: const Text('Historial', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Botón: Avanzar a Siguiente Etapa (Criterio 2)
-                if (puedeAvanzar && proximaEtapa != null)
-                  ElevatedButton.icon(
-                    onPressed: () => AvanzarEtapaDialog.show(context, lote),
-                    icon: Icon(proximaEtapa.icono, size: 16),
-                    label: Text(
-                      'A ${proximaEtapa.titulo}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: proximaEtapa.color,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.green.shade300),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.verified_rounded, size: 16, color: Colors.green.shade700),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Terminado',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade700,
-                          ),
+                    // Botón: Avanzar a Siguiente Etapa (Criterio 2)
+                    if (puedeAvanzar && proximaEtapa != null)
+                      ElevatedButton.icon(
+                        onPressed: () => AvanzarEtapaDialog.show(context, lote),
+                        icon: Icon(proximaEtapa.icono, size: 16),
+                        label: Text(
+                          'A ${proximaEtapa.titulo}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         ),
-                      ],
-                    ),
-                  ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: proximaEtapa.color,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified_rounded, size: 16, color: Colors.green.shade700),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Terminado',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ],
