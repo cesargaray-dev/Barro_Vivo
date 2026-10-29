@@ -1,13 +1,15 @@
 // lib/router/app_router.dart
 //
-// Configuración central de navegación con go_router (Navigator 2.0) – HU-02.
+// Configuración central de navegación con go_router (Navigator 2.0) – HU-02 / HU-05.
 //
 // Rutas:
-//   /          → SplashScreen  (evaluación de sesión)
-//   /login     → LoginScreen
-//   /registro  → RegistroScreen
-//   /taller    → TallerHomeScreen  [requiere rol: taller]
-//   /cliente   → ClienteHomeScreen [requiere rol: cliente]
+//   /               → SplashScreen  (evaluación de sesión)
+//   /login          → LoginScreen
+//   /registro       → RegistroScreen
+//   /taller         → TallerHomeScreen  [requiere rol: taller]
+//   /taller/inventario → InventarioScreen
+//   /taller/lotes   → LotesScreen [HU-05]
+//   /cliente        → ClienteHomeScreen [requiere rol: cliente]
 //
 // Guards (redirección automática):
 //   – Sin sesión      → redirige a /login
@@ -19,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/inventario/views/inventario_screen.dart';
+import '../features/produccion/views/lotes_screen.dart';
 import '../models/user_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../views/splash_screen.dart';
@@ -38,6 +41,7 @@ class AppRoutes {
   static const String registro = '/registro';
   static const String taller = '/taller';
   static const String inventario = '/taller/inventario';
+  static const String lotes = '/taller/lotes';
   static const String cliente = '/cliente';
 }
 
@@ -136,6 +140,11 @@ class AppRouter {
           path: AppRoutes.inventario,
           name: 'inventario',
           builder: (context, state) => const InventarioScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.lotes,
+          name: 'lotes',
+          builder: (context, state) => const LotesScreen(),
         ),
 
         // ── Área Cliente ──────────────────────────────────────────────────

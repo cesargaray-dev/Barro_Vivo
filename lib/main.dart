@@ -1,7 +1,7 @@
 // lib/main.dart
 //
 // ══════════════════════════════════════════════════════════════════════════════
-// COMPOSITION ROOT – Barro Vivo (HU-01)
+// COMPOSITION ROOT – Barro Vivo (HU-01 / HU-03 / HU-05)
 // ══════════════════════════════════════════════════════════════════════════════
 //
 // Responsabilidades de este archivo:
@@ -20,6 +20,8 @@ import 'package:provider/provider.dart';
 
 import 'features/inventario/repositories/insumos_repository.dart';
 import 'features/inventario/viewmodels/inventario_viewmodel.dart';
+import 'features/produccion/repositories/produccion_repository.dart';
+import 'features/produccion/viewmodels/produccion_viewmodel.dart';
 import 'repositories/auth_repository.dart';
 import 'router/app_router.dart';
 import 'services/supabase_service.dart';
@@ -39,12 +41,14 @@ Future<void> main() async {
   // Los repositorios concretos se crean aquí y se inyectan hacia arriba.
   final AuthRepository authRepository = SupabaseAuthRepository();
   final InsumosRepository insumosRepository = SupabaseInsumosRepository();
+  final ProduccionRepository produccionRepository = SupabaseProduccionRepository();
 
   // ── 3. Levantar la aplicación ──────────────────────────────────────────
   runApp(
     BarroVivoApp(
       authRepository: authRepository,
       insumosRepository: insumosRepository,
+      produccionRepository: produccionRepository,
     ),
   );
 }
@@ -58,6 +62,7 @@ class BarroVivoApp extends StatefulWidget {
     super.key,
     required this.authRepository,
     this.insumosRepository,
+    this.produccionRepository,
   });
 
   /// Repositorio de autenticación inyectado desde [main].
@@ -66,15 +71,19 @@ class BarroVivoApp extends StatefulWidget {
   /// Repositorio de insumos inyectado desde [main] o pruebas.
   final InsumosRepository? insumosRepository;
 
+  /// Repositorio de producción de lotes inyectado desde [main] o pruebas.
+  final ProduccionRepository? produccionRepository;
+
   @override
   State<BarroVivoApp> createState() => _BarroVivoAppState();
 }
 
 class _BarroVivoAppState extends State<BarroVivoApp> {
-  // El ViewModel se crea aquí para que el GoRouter pueda escucharlo
-  // y recalcular las redirecciones cuando el estado cambie.
+  // Los ViewModels se crean aquí para que el GoRouter y widgets puedan
+  // escucharlos y recalcular estados/redirecciones reactivamente.
   late final AuthViewModel _authViewModel;
   late final InventarioViewModel _inventarioViewModel;
+  late final ProduccionViewModel _produccionViewModel;
 
   @override
   void initState() {
@@ -83,12 +92,16 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _inventarioViewModel = InventarioViewModel(
       insumosRepository: widget.insumosRepository ?? SupabaseInsumosRepository(),
     );
+    _produccionViewModel = ProduccionViewModel(
+      produccionRepository: widget.produccionRepository ?? SupabaseProduccionRepository(),
+    );
   }
 
   @override
   void dispose() {
     _authViewModel.dispose();
     _inventarioViewModel.dispose();
+    _produccionViewModel.dispose();
     super.dispose();
   }
 
@@ -103,6 +116,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         Provider<InsumosRepository>.value(
           value: widget.insumosRepository ?? SupabaseInsumosRepository(),
         ),
+        Provider<ProduccionRepository>.value(
+          value: widget.produccionRepository ?? SupabaseProduccionRepository(),
+        ),
 
         // ── Capa de ViewModels ────────────────────────────────────────────
         // Se usa ChangeNotifierProvider para que los widgets puedan
@@ -110,6 +126,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         ChangeNotifierProvider<AuthViewModel>.value(value: _authViewModel),
         ChangeNotifierProvider<InventarioViewModel>.value(
           value: _inventarioViewModel,
+        ),
+        ChangeNotifierProvider<ProduccionViewModel>.value(
+          value: _produccionViewModel,
         ),
       ],
       child: _AppRouter(authViewModel: _authViewModel),
