@@ -160,10 +160,12 @@ class _PanelFinancieroScreenState extends State<PanelFinancieroScreen>
         title: const Text('Finanzas y Utilidad'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.cobaltBlue,
-          labelColor: AppColors.cobaltBlue,
-          unselectedLabelColor: Colors.black54,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          indicatorColor: Colors.white,
+          indicatorWeight: 3.5,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.65),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
           tabs: const [
             Tab(text: 'Resumen Global', icon: Icon(Icons.dashboard_rounded, size: 20)),
             Tab(text: 'Lotes de Producción', icon: Icon(Icons.inventory_2_rounded, size: 20)),
@@ -235,39 +237,54 @@ class _PanelFinancieroScreenState extends State<PanelFinancieroScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tarjeta de alerta si hay lotes en riesgo
+          // Tarjeta de alerta interactiva si hay lotes en riesgo
           if (vm.cantidadLotesConMargenRiesgoso > 0) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF6C00).withValues(alpha: 0.1),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  _tabController.animateTo(1);
+                  vm.cambiarFiltro(FiltroFinanzas.requierenRevision);
+                },
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFEF6C00).withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF6C00), size: 28),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${vm.cantidadLotesConMargenRiesgoso} ${vm.cantidadLotesConMargenRiesgoso == 1 ? 'lote requiere' : 'lotes requieren'} revisión de precio',
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFE65100),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'El margen de ganancia es muy ajustado o se encuentra en pérdida.',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
-                        ),
-                      ],
-                    ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF6C00).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFEF6C00).withValues(alpha: 0.4)),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF6C00), size: 28),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${vm.cantidadLotesConMargenRiesgoso} ${vm.cantidadLotesConMargenRiesgoso == 1 ? 'lote requiere' : 'lotes requieren'} revisión de margen',
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFE65100),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Toca aquí para filtrar y ajustar los precios con margen bajo o pérdida.',
+                              style: TextStyle(fontSize: 12, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: Color(0xFFEF6C00),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -430,15 +447,42 @@ class _PanelFinancieroScreenState extends State<PanelFinancieroScreen>
             child: Row(
               children: FiltroFinanzas.values.map((f) {
                 final seleccionado = vm.filtro == f;
+                final esRevision = f == FiltroFinanzas.requierenRevision;
+                final cantidadCriticos = vm.cantidadLotesConMargenRiesgoso;
+
+                String textoChip = f.etiqueta;
+                if (esRevision && cantidadCriticos > 0) {
+                  textoChip = '${f.etiqueta} ($cantidadCriticos)';
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(f.etiqueta),
+                    avatar: esRevision && cantidadCriticos > 0
+                        ? Icon(
+                            Icons.warning_amber_rounded,
+                            size: 16,
+                            color: seleccionado ? Colors.white : const Color(0xFFEF6C00),
+                          )
+                        : null,
+                    label: Text(textoChip),
                     selected: seleccionado,
-                    selectedColor: AppColors.cobaltBlue,
+                    selectedColor: esRevision ? const Color(0xFFEF6C00) : AppColors.cobaltBlue,
+                    backgroundColor: esRevision && cantidadCriticos > 0
+                        ? const Color(0xFFEF6C00).withValues(alpha: 0.12)
+                        : null,
+                    side: esRevision && cantidadCriticos > 0 && !seleccionado
+                        ? const BorderSide(color: Color(0xFFEF6C00), width: 1.2)
+                        : null,
                     labelStyle: TextStyle(
-                      color: seleccionado ? Colors.white : Colors.black87,
-                      fontWeight: seleccionado ? FontWeight.bold : FontWeight.normal,
+                      color: seleccionado
+                          ? Colors.white
+                          : (esRevision && cantidadCriticos > 0
+                              ? const Color(0xFFE65100)
+                              : Colors.black87),
+                      fontWeight: seleccionado || (esRevision && cantidadCriticos > 0)
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                     onSelected: (_) => vm.cambiarFiltro(f),
                   ),
@@ -458,12 +502,31 @@ class _PanelFinancieroScreenState extends State<PanelFinancieroScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade400),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No hay lotes en esta categoría.',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        Icon(
+                          vm.filtro == FiltroFinanzas.requierenRevision
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.inventory_2_outlined,
+                          size: 48,
+                          color: vm.filtro == FiltroFinanzas.requierenRevision
+                              ? const Color(0xFF2E7D32)
+                              : Colors.grey.shade400,
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          vm.filtro == FiltroFinanzas.requierenRevision
+                              ? '¡Excelente! No hay lotes con margen riesgoso.'
+                              : 'No hay lotes en esta categoría.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        if (vm.filtro == FiltroFinanzas.requierenRevision) ...[
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Todos los lotes cuentan con márgenes saludables o excelentes.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.black54, fontSize: 13),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -566,3 +629,4 @@ class _PanelFinancieroScreenState extends State<PanelFinancieroScreen>
     );
   }
 }
+

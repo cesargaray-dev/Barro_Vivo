@@ -189,8 +189,12 @@ class LoteFinancieroCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Fila de Utilidad y Margen
-            Row(
+            // Fila de Utilidad y Margen (Wrap adaptable para prevenir desbordamientos en pantallas estrechas)
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -214,7 +218,6 @@ class LoteFinancieroCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Spacer(),
                 Text(
                   'Ganancia: ${FinanzasUIHelpers.formatMonedaCorta(analisis.utilidadUnitaria)}/pza',
                   style: textTheme.bodySmall?.copyWith(

@@ -291,3 +291,4 @@ class SupabaseFinanzasRepository implements FinanzasRepository {
     }
   }
 }
+

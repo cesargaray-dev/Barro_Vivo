@@ -298,6 +298,17 @@ void main() {
           costoMermasTotal: 150.0,
           precioVentaUnitario: 90.0,
         ),
+        const AnalisisFinancieroLote(
+          id: 'f3',
+          loteId: 'l3',
+          loteCodigo: 'Lote en Riesgo',
+          etapaActual: EtapaProduccion.esmaltado,
+          cantidadPiezasIniciales: 10,
+          piezasMermadas: 0,
+          gastoMateriaPrimaTotal: 1000.0,
+          costoMermasTotal: 0.0,
+          precioVentaUnitario: 105.0, // Costo $100, margen 4.76% (Ajustado)
+        ),
       ]);
       viewModel = FinanzasViewModel(finanzasRepository: repository);
     });
@@ -306,7 +317,7 @@ void main() {
       expect(viewModel.status, equals(FinanzasStatus.initial));
       await viewModel.cargarDatos();
       expect(viewModel.status, equals(FinanzasStatus.loaded));
-      expect(viewModel.todosLosLotes.length, equals(2));
+      expect(viewModel.todosLosLotes.length, equals(3));
     });
 
     test('Filtrado por pestañas responde correctamente', () async {
@@ -314,17 +325,22 @@ void main() {
 
       // Todos
       viewModel.cambiarFiltro(FiltroFinanzas.todos);
-      expect(viewModel.lotesFiltrados.length, equals(2));
+      expect(viewModel.lotesFiltrados.length, equals(3));
 
       // Terminados (Lote cerrado)
       viewModel.cambiarFiltro(FiltroFinanzas.terminados);
       expect(viewModel.lotesFiltrados.length, equals(1));
       expect(viewModel.lotesFiltrados.first.loteCodigo, equals('Lote Terminado'));
 
-      // En proceso
+      // En proceso (Lote en Jahuete y Lote en Riesgo)
       viewModel.cambiarFiltro(FiltroFinanzas.enProceso);
+      expect(viewModel.lotesFiltrados.length, equals(2));
+
+      // Requieren revisión (solo lotes con margen crítico / ajustado)
+      viewModel.cambiarFiltro(FiltroFinanzas.requierenRevision);
       expect(viewModel.lotesFiltrados.length, equals(1));
-      expect(viewModel.lotesFiltrados.first.loteCodigo, equals('Lote en Jahuete'));
+      expect(viewModel.lotesFiltrados.first.loteCodigo, equals('Lote en Riesgo'));
+      expect(viewModel.cantidadLotesConMargenRiesgoso, equals(1));
     });
 
     test('Simulador interactivo recalcula utilidad y margen al vuelo sin persistir', () async {

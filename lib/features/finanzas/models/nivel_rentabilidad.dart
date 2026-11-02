@@ -8,7 +8,7 @@
 enum NivelRentabilidad {
   excelente('Excelente', 'Margen óptimo (>= 45%), taller altamente rentable'),
   saludable('Saludable', 'Margen adecuado (25% a 44%), cubre costos y genera ganancia sólida'),
-  ajustado('Ajustado / Riesgo', 'Margen estrecho (1% a 24%), vulnerable a fluctuaciones de insumos'),
+  ajustado('Ajustado', 'Margen estrecho (1% a 24%), vulnerable a fluctuaciones de insumos'),
   perdida('En Pérdida', 'Precio por debajo del costo unitario (<= 0%), el taller pierde dinero');
 
   const NivelRentabilidad(this.etiqueta, this.descripcion);
@@ -35,3 +35,4 @@ enum NivelRentabilidad {
   /// Indica si el margen es rentable y seguro para el taller.
   bool get esRentable => this == NivelRentabilidad.excelente || this == NivelRentabilidad.saludable;
 }
+

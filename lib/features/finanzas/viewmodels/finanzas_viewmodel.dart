@@ -26,6 +26,7 @@ enum FinanzasStatus {
 /// Opciones de filtrado para la lista de análisis financiero de lotes.
 enum FiltroFinanzas {
   todos('Todos los lotes'),
+  requierenRevision('Requieren revisión'),
   terminados('Lotes cerrados (Terminados)'),
   enProceso('En producción activa');
 
@@ -68,6 +69,8 @@ class FinanzasViewModel extends ChangeNotifier {
   List<AnalisisFinancieroLote> get lotesFiltrados {
     return switch (_filtro) {
       FiltroFinanzas.todos => _lotesFinancieros,
+      FiltroFinanzas.requierenRevision =>
+        _lotesFinancieros.where((l) => l.nivelRentabilidad.esCritico).toList(),
       FiltroFinanzas.terminados =>
         _lotesFinancieros.where((l) => l.etapaActual.esUltima).toList(),
       FiltroFinanzas.enProceso =>
@@ -250,3 +253,4 @@ class FinanzasViewModel extends ChangeNotifier {
     }
   }
 }
+

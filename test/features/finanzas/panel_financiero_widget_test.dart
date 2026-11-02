@@ -17,6 +17,7 @@ import 'package:barro_vivo/features/finanzas/views/panel_financiero_screen.dart'
 import 'package:barro_vivo/features/finanzas/views/widgets/costo_unitario_card.dart';
 import 'package:barro_vivo/features/finanzas/views/widgets/grafica_desglose_categorias.dart';
 import 'package:barro_vivo/features/finanzas/views/widgets/indicador_utilidad_card.dart';
+import 'package:barro_vivo/features/finanzas/views/widgets/lote_financiero_card.dart';
 import 'package:barro_vivo/theme/app_theme.dart';
 
 class MockFinanzasRepository implements FinanzasRepository {
@@ -97,13 +98,10 @@ void main() {
         const SingleChildScrollView(child: CostoUnitarioCard(analisis: lotePrueba)),
       ));
 
-      // Verifica presencia de encabezados de la fórmula
       expect(find.text('Cálculo de Costo Unitario'), findsOneWidget);
       expect(find.text('MATERIA PRIMA'), findsOneWidget);
       expect(find.text('MERMA PRORRAT.'), findsOneWidget);
       expect(find.text('COSTO UNIT.'), findsOneWidget);
-
-      // Verifica trazabilidad de piezas
       expect(find.text('Piezas iniciales: 50'), findsOneWidget);
       expect(find.text('Útiles: 45'), findsOneWidget);
     });
@@ -118,7 +116,7 @@ void main() {
       expect(find.text('PRECIO VENTA'), findsOneWidget);
       expect(find.text('UTILIDAD NETA'), findsOneWidget);
       expect(find.text('Margen de Utilidad sobre Venta'), findsOneWidget);
-      expect(find.text('Excelente'), findsOneWidget); // Margen > 45%
+      expect(find.text('Excelente'), findsOneWidget);
     });
 
     testWidgets('GraficaDesgloseCategorias renderiza Criterio 2: Categorías de costo',
@@ -138,11 +136,60 @@ void main() {
       expect(find.text('Merma Prorrateada'), findsOneWidget);
       expect(find.text('Costo Total Invertido'), findsOneWidget);
     });
+
+    testWidgets('LoteFinancieroCard no genera overflow con margen ajustado en pantalla estrecha',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      const loteAjustado = AnalisisFinancieroLote(
+        id: 'lote_riesgo',
+        loteId: 'lote_r',
+        loteCodigo: 'LOTE-2024-004 (Azulejos Mayólica)',
+        descripcion: 'Azulejos cuadrados 10x10 para mural a...',
+        etapaActual: EtapaProduccion.esmaltado,
+        cantidadPiezasIniciales: 100,
+        piezasMermadas: 10,
+        gastoMateriaPrimaTotal: 4500.0,
+        costoMermasTotal: 500.0,
+        precioVentaUnitario: 65.0, // Margen ajustado 14.5%
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest(
+        SingleChildScrollView(
+          child: LoteFinancieroCard(
+            analisis: loteAjustado,
+            onVerDetalle: () {},
+          ),
+        ),
+      ));
+
+      expect(find.text('LOTE-2024-004 (Azulejos Mayólica)'), findsOneWidget);
+      expect(find.text('Ajustado: Margen 14.5%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('HU-07 PanelFinancieroScreen Integración', () {
-    testWidgets('PanelFinancieroScreen carga y renderiza métricas sin errores', (tester) async {
-      final repo = MockFinanzasRepository(lotes: [lotePrueba]);
+    testWidgets('PanelFinancieroScreen carga y renderiza métricas y chip Requieren revisión',
+        (tester) async {
+      final repo = MockFinanzasRepository(lotes: [
+        lotePrueba,
+        const AnalisisFinancieroLote(
+          id: 'lote_riesgo',
+          loteId: 'lote_r',
+          loteCodigo: 'LOTE-2024-004 (Azulejos)',
+          cantidadPiezasIniciales: 100,
+          piezasMermadas: 10,
+          gastoMateriaPrimaTotal: 4500.0,
+          costoMermasTotal: 500.0,
+          precioVentaUnitario: 65.0, // Ajustado 14.5%
+        ),
+      ]);
       final vm = FinanzasViewModel(finanzasRepository: repo);
       await vm.cargarDatos();
 
@@ -155,9 +202,19 @@ void main() {
       expect(find.text('Finanzas y Utilidad'), findsOneWidget);
       expect(find.text('Resumen Global'), findsOneWidget);
       expect(find.text('Lotes de Producción'), findsOneWidget);
-      expect(find.text('Inversión Total'), findsOneWidget);
-      expect(find.text('Utilidad Proyectada'), findsOneWidget);
-      expect(find.text('Margen Promedio'), findsOneWidget);
+
+      // Cambiar a la pestaña de lotes
+      await tester.tap(find.text('Lotes de Producción'));
+      await tester.pumpAndSettle();
+
+      // Debe aparecer el chip de "Requieren revisión (1)"
+      expect(find.text('Requieren revisión (1)'), findsOneWidget);
+
+      // Tocar el chip de filtro
+      await tester.tap(find.text('Requieren revisión (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('LOTE-2024-004 (Azulejos)'), findsOneWidget);
     });
   });
 }

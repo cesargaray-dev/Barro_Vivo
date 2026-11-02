@@ -68,3 +68,4 @@ CREATE TRIGGER set_finanzas_updated_at
     BEFORE UPDATE ON public.lotes_finanzas
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
+
