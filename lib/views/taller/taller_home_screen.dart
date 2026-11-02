@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 
 import '../../features/inventario/viewmodels/inventario_viewmodel.dart';
 import '../../features/produccion/viewmodels/produccion_viewmodel.dart';
+import '../../features/finanzas/viewmodels/finanzas_viewmodel.dart';
+import '../../features/finanzas/views/widgets/finanzas_ui_helpers.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -37,6 +39,11 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
       if (prodVM.status == ProduccionStatus.initial) {
         prodVM.cargarLotes();
       }
+
+      final finVM = context.read<FinanzasViewModel>();
+      if (finVM.status == FinanzasStatus.initial) {
+        finVM.cargarDatos();
+      }
     });
   }
 
@@ -45,6 +52,7 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
     final authVM = context.watch<AuthViewModel>();
     final inventarioVM = context.watch<InventarioViewModel>();
     final produccionVM = context.watch<ProduccionViewModel>();
+    final finanzasVM = context.watch<FinanzasViewModel>();
     final textTheme = Theme.of(context).textTheme;
 
     final totalInsumos = inventarioVM.totalInsumos;
@@ -381,6 +389,150 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tarjeta Destacada 3: Finanzas y Utilidad (HU-07)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: AppColors.cobaltBlue.withValues(alpha: 0.3),
+                  width: 1.2,
+                ),
+              ),
+              color: Colors.white,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => context.push(AppRoutes.finanzas),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.analytics_rounded,
+                              color: Color(0xFF2E7D32),
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Finanzas y Utilidad',
+                                      style: textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.cobaltBlue,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2E7D32),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'COSTO REAL',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Costo unitario con merma prorrateada, margen de utilidad y desgloses por categoría.',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: Colors.black54,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.black38,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 14),
+
+                      // Métricas rápidas de finanzas
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.trending_up_rounded,
+                                  size: 14,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  finanzasVM.isLoading && finanzasVM.todosLosLotes.isEmpty
+                                      ? 'Cargando...'
+                                      : 'Margen ${FinanzasUIHelpers.formatPorcentaje(finanzasVM.margenPromedioGlobal)}',
+                                  style: textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.terracotta.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              finanzasVM.isLoading && finanzasVM.todosLosLotes.isEmpty
+                                  ? 'Cargando...'
+                                  : 'Costo prom: ${FinanzasUIHelpers.formatMonedaCorta(finanzasVM.costoUnitarioPromedioGlobal)}',
+                              style: textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.terracotta,
+                              ),
                             ),
                           ),
                         ],

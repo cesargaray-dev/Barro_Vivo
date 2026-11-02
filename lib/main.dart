@@ -22,6 +22,8 @@ import 'features/inventario/repositories/insumos_repository.dart';
 import 'features/inventario/viewmodels/inventario_viewmodel.dart';
 import 'features/produccion/repositories/produccion_repository.dart';
 import 'features/produccion/viewmodels/produccion_viewmodel.dart';
+import 'features/finanzas/repositories/finanzas_repository.dart';
+import 'features/finanzas/viewmodels/finanzas_viewmodel.dart';
 import 'repositories/auth_repository.dart';
 import 'router/app_router.dart';
 import 'services/supabase_service.dart';
@@ -42,6 +44,7 @@ Future<void> main() async {
   final AuthRepository authRepository = SupabaseAuthRepository();
   final InsumosRepository insumosRepository = SupabaseInsumosRepository();
   final ProduccionRepository produccionRepository = SupabaseProduccionRepository();
+  final FinanzasRepository finanzasRepository = SupabaseFinanzasRepository();
 
   // ── 3. Levantar la aplicación ──────────────────────────────────────────
   runApp(
@@ -49,6 +52,7 @@ Future<void> main() async {
       authRepository: authRepository,
       insumosRepository: insumosRepository,
       produccionRepository: produccionRepository,
+      finanzasRepository: finanzasRepository,
     ),
   );
 }
@@ -63,6 +67,7 @@ class BarroVivoApp extends StatefulWidget {
     required this.authRepository,
     this.insumosRepository,
     this.produccionRepository,
+    this.finanzasRepository,
   });
 
   /// Repositorio de autenticación inyectado desde [main].
@@ -74,6 +79,9 @@ class BarroVivoApp extends StatefulWidget {
   /// Repositorio de producción de lotes inyectado desde [main] o pruebas.
   final ProduccionRepository? produccionRepository;
 
+  /// Repositorio financiero inyectado desde [main] o pruebas.
+  final FinanzasRepository? finanzasRepository;
+
   @override
   State<BarroVivoApp> createState() => _BarroVivoAppState();
 }
@@ -84,6 +92,7 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
   late final AuthViewModel _authViewModel;
   late final InventarioViewModel _inventarioViewModel;
   late final ProduccionViewModel _produccionViewModel;
+  late final FinanzasViewModel _finanzasViewModel;
 
   @override
   void initState() {
@@ -95,6 +104,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _produccionViewModel = ProduccionViewModel(
       produccionRepository: widget.produccionRepository ?? SupabaseProduccionRepository(),
     );
+    _finanzasViewModel = FinanzasViewModel(
+      finanzasRepository: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
+    );
   }
 
   @override
@@ -102,6 +114,7 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _authViewModel.dispose();
     _inventarioViewModel.dispose();
     _produccionViewModel.dispose();
+    _finanzasViewModel.dispose();
     super.dispose();
   }
 
@@ -119,6 +132,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         Provider<ProduccionRepository>.value(
           value: widget.produccionRepository ?? SupabaseProduccionRepository(),
         ),
+        Provider<FinanzasRepository>.value(
+          value: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
+        ),
 
         // ── Capa de ViewModels ────────────────────────────────────────────
         // Se usa ChangeNotifierProvider para que los widgets puedan
@@ -129,6 +145,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         ),
         ChangeNotifierProvider<ProduccionViewModel>.value(
           value: _produccionViewModel,
+        ),
+        ChangeNotifierProvider<FinanzasViewModel>.value(
+          value: _finanzasViewModel,
         ),
       ],
       child: _AppRouter(authViewModel: _authViewModel),
