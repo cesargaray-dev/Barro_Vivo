@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../theme/app_theme.dart';
-import '../../models/etapa_produccion.dart';
 import '../../models/lote_produccion.dart';
 import '../../viewmodels/produccion_viewmodel.dart';
 import 'etapa_badge.dart';

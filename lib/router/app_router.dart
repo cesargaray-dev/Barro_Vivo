@@ -22,6 +22,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/inventario/views/inventario_screen.dart';
 import '../features/produccion/views/lotes_screen.dart';
+import '../features/finanzas/views/panel_financiero_screen.dart';
 import '../models/user_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../views/splash_screen.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String taller = '/taller';
   static const String inventario = '/taller/inventario';
   static const String lotes = '/taller/lotes';
+  static const String finanzas = '/taller/finanzas';
   static const String cliente = '/cliente';
 }
 
@@ -145,6 +147,11 @@ class AppRouter {
           path: AppRoutes.lotes,
           name: 'lotes',
           builder: (context, state) => const LotesScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.finanzas,
+          name: 'finanzas',
+          builder: (context, state) => const PanelFinancieroScreen(),
         ),
 
         // ── Área Cliente ──────────────────────────────────────────────────
