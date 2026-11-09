@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Barro Vivo requiere acceso a la cámara para tomar la evidencia fotográfica del daño al registrar una merma.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Barro Vivo requiere acceso a la galería para adjuntar la evidencia fotográfica del daño al registrar una merma.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

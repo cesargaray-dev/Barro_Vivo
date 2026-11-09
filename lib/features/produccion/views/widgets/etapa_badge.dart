@@ -43,12 +43,16 @@ class EtapaBadge extends StatelessWidget {
             color: color,
           ),
           const SizedBox(width: 5),
-          Text(
-            etapa.titulo,
-            style: TextStyle(
-              fontSize: compact ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Flexible(
+            child: Text(
+              etapa.titulo,
+              style: TextStyle(
+                fontSize: compact ? 11 : 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
