@@ -1,19 +1,24 @@
 -- ==============================================================================
--- BARRO VIVO - REGISTRO DE MERMAS CON COSTO ESTIMADO (HU-06)
+-- BARRO VIVO - REGISTRO DE MERMAS CON COSTO ESTIMADO + STORAGE DE FOTOS (HU-06)
 -- ==============================================================================
--- Historia: Como usuario del taller, quiero registrar las mermas de un lote con
--- su costo estimado, para conocer el costo real de la producción.
---
--- Criterios de Aceptación:
---   1. Se pueden registrar piezas perdidas indicando la etapa en la que ocurrió
---      el daño y el motivo (despostillado, rotura, etc.).
---   2. Es obligatorio poder adjuntar una evidencia fotográfica del daño al
---      registrar la merma.
---   3. El sistema calcula el costo estimado de la pérdida según los insumos
---      consumidos.
+-- Instrucciones:
+--   Copia y pega todo este script en el "SQL Editor" de tu proyecto en Supabase
+--   y presiona "Run". Creará automáticamente:
+--     1. La tabla public.lotes_mermas conectada a public.lotes_produccion(id).
+--     2. El bucket público 'evidencias-mermas' en Supabase Storage.
+--     3. Todas las políticas RLS de base de datos y de Storage para subir fotos.
 -- ==============================================================================
 
--- 1. Crear tabla: lotes_mermas
+-- 0. Asegurar función de trigger para updated_at
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = timezone('utc'::text, now());
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 1. Crear tabla: lotes_mermas (relacionada con lotes_produccion)
 CREATE TABLE IF NOT EXISTS public.lotes_mermas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lote_id UUID NOT NULL REFERENCES public.lotes_produccion(id) ON DELETE CASCADE,
@@ -51,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_lotes_mermas_activo ON public.lotes_mermas(activo
 -- 3. Habilitar Seguridad a Nivel de Fila (RLS)
 ALTER TABLE public.lotes_mermas ENABLE ROW LEVEL SECURITY;
 
--- 4. Políticas RLS para usuarios autenticados del taller
+-- 4. Políticas RLS para usuarios autenticados del taller y rol anon
 DROP POLICY IF EXISTS "Permitir lectura de mermas a usuarios autenticados" ON public.lotes_mermas;
 CREATE POLICY "Permitir lectura de mermas a usuarios autenticados"
     ON public.lotes_mermas FOR SELECT
@@ -71,7 +76,6 @@ CREATE POLICY "Permitir actualizacion de mermas a usuarios autenticados"
     USING (true)
     WITH CHECK (length(trim(evidencia_url)) > 0 AND cantidad_piezas > 0);
 
--- Políticas de desarrollo local (rol anon)
 DROP POLICY IF EXISTS "Permitir acceso anon en desarrollo mermas" ON public.lotes_mermas;
 CREATE POLICY "Permitir acceso anon en desarrollo mermas"
     ON public.lotes_mermas FOR ALL
@@ -86,3 +90,35 @@ CREATE TRIGGER set_mermas_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
+-- ==============================================================================
+-- 6. SUPABASE STORAGE: BUCKET 'evidencias-mermas' PARA GUARDAR LAS FOTOS EN LA NUBE
+-- ==============================================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('evidencias-mermas', 'evidencias-mermas', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Políticas RLS en storage.objects para permitir subir y consultar las fotos
+DROP POLICY IF EXISTS "Lectura publica de fotos de mermas" ON storage.objects;
+CREATE POLICY "Lectura publica de fotos de mermas"
+    ON storage.objects FOR SELECT
+    TO public
+    USING (bucket_id = 'evidencias-mermas');
+
+DROP POLICY IF EXISTS "Subida de fotos de mermas taller" ON storage.objects;
+CREATE POLICY "Subida de fotos de mermas taller"
+    ON storage.objects FOR INSERT
+    TO public
+    WITH CHECK (bucket_id = 'evidencias-mermas');
+
+DROP POLICY IF EXISTS "Actualizacion de fotos de mermas taller" ON storage.objects;
+CREATE POLICY "Actualizacion de fotos de mermas taller"
+    ON storage.objects FOR UPDATE
+    TO public
+    USING (bucket_id = 'evidencias-mermas');
+
+DROP POLICY IF EXISTS "Eliminacion de fotos de mermas taller" ON storage.objects;
+CREATE POLICY "Eliminacion de fotos de mermas taller"
+    ON storage.objects FOR DELETE
+    TO public
+    USING (bucket_id = 'evidencias-mermas');

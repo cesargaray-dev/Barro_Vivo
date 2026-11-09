@@ -1,8 +1,10 @@
 // lib/features/mermas/repositories/mermas_repository.dart
 //
 // Capa de acceso a datos para el registro de mermas de lotes con evidencia
-// fotográfica obligatoria y costo estimado por insumos consumidos (HU-06).
+// fotográfica obligatoria (Supabase Storage) y costo estimado por insumos (HU-06).
 // Patrón Repository: interfaz abstracta + implementación concreta Supabase con fallback.
+
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -68,7 +70,7 @@ abstract class MermasRepository {
   Future<void> darDeBajaMerma(String id);
 }
 
-// ── Implementación Concreta (Supabase) ─────────────────────────────────────────
+// ── Implementación Concreta (Supabase DB + Supabase Storage) ──────────────────
 
 class SupabaseMermasRepository implements MermasRepository {
   SupabaseMermasRepository({this.client}) {
@@ -79,8 +81,14 @@ class SupabaseMermasRepository implements MermasRepository {
   supa.SupabaseClient get _resolvedClient => client ?? SupabaseService.client;
 
   static const String _tablaMermas = 'lotes_mermas';
+  static const String _tablaLotes = 'lotes_produccion';
+  static const String _bucketEvidencias = 'evidencias-mermas';
 
-  // Memoria local de respaldo con datos realistas del taller
+  static final RegExp _uuidRegex = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  // Memoria local de respaldo si aún no se ha ejecutado la migración SQL o sin red
   final List<RegistroMerma> _memoriaMermas = [];
 
   void _inicializarDatosSemilla() {
@@ -189,6 +197,114 @@ class SupabaseMermasRepository implements MermasRepository {
     return List.unmodifiable(lista);
   }
 
+  /// Sube el archivo fotográfico del teléfono al bucket `evidencias-mermas` en
+  /// Supabase Storage y devuelve su URL pública en la nube.
+  /// Si falla o es una ruta virtual/remota, devuelve la ruta original como respaldo.
+  Future<String> _subirEvidenciaASupabaseStorage({
+    required String evidenciaPath,
+    required EtapaProduccion etapa,
+    required MotivoMerma motivo,
+  }) async {
+    final trimmed = evidenciaPath.trim();
+    if (trimmed.isEmpty ||
+        trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://') ||
+        trimmed.startsWith('evidencia://')) {
+      return trimmed;
+    }
+
+    if (kIsWeb) return trimmed;
+
+    try {
+      final archivo = File(trimmed);
+      if (!archivo.existsSync()) {
+        return trimmed;
+      }
+
+      final bytes = await archivo.readAsBytes();
+      final extension = trimmed.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+      final contentType = extension == 'png' ? 'image/png' : 'image/jpeg';
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final storagePath =
+          'mermas/${etapa.codigo}_${motivo.codigo}_$ts.$extension';
+
+      await _resolvedClient.storage.from(_bucketEvidencias).uploadBinary(
+            storagePath,
+            bytes,
+            fileOptions: supa.FileOptions(
+              contentType: contentType,
+              upsert: true,
+            ),
+          );
+
+      final publicUrl = _resolvedClient.storage
+          .from(_bucketEvidencias)
+          .getPublicUrl(storagePath);
+
+      debugPrint('[SupabaseMermasRepository] Foto subida a Storage: $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint(
+        '[SupabaseMermasRepository] No se pudo subir la foto a Storage ($e). Conservando ruta local.',
+      );
+      return trimmed;
+    }
+  }
+
+  /// Garantiza que [loteId] sea un UUID válido existente en `public.lotes_produccion`.
+  /// Si el usuario seleccionó un lote semilla (ej. `lote_seed_001`), busca o crea el
+  /// lote en `public.lotes_produccion` para obtener su UUID real y respetar la FK.
+  Future<String> _resolverLoteUuidEnSupabase({
+    required String loteId,
+    required String loteCodigo,
+    required EtapaProduccion etapa,
+    required int cantidadPiezasMinima,
+  }) async {
+    final limpio = loteId.trim();
+    if (_uuidRegex.hasMatch(limpio)) {
+      return limpio;
+    }
+
+    try {
+      // 1. Buscar si ya existe un lote en lotes_produccion con ese mismo código
+      final existentes = await _resolvedClient
+          .from(_tablaLotes)
+          .select('id')
+          .eq('codigo', loteCodigo.trim())
+          .limit(1);
+
+      if (existentes.isNotEmpty) {
+        final idReal = existentes.first['id']?.toString();
+        if (idReal != null && _uuidRegex.hasMatch(idReal)) {
+          return idReal;
+        }
+      }
+
+      // 2. Si no existe aún en lotes_produccion, crearlo para obtener su UUID real
+      final nuevoLote = await _resolvedClient
+          .from(_tablaLotes)
+          .insert({
+            'codigo': loteCodigo.trim(),
+            'cantidad_piezas': cantidadPiezasMinima < 20 ? 40 : cantidadPiezasMinima * 2,
+            'fecha_creacion': DateTime.now().toIso8601String(),
+            'descripcion': 'Lote sincronizado automáticamente al registrar merma',
+            'etapa_actual': etapa.codigo,
+            'activo': true,
+          })
+          .select('id')
+          .single();
+
+      final idCreado = nuevoLote['id']?.toString();
+      if (idCreado != null && _uuidRegex.hasMatch(idCreado)) {
+        return idCreado;
+      }
+    } catch (e) {
+      debugPrint('[SupabaseMermasRepository] No se pudo resolver UUID de lote: $e');
+    }
+
+    return limpio;
+  }
+
   @override
   Future<RegistroMerma> registrarMerma({
     required String loteId,
@@ -204,7 +320,8 @@ class SupabaseMermasRepository implements MermasRepository {
   }) async {
     final timestamp = DateTime.now();
 
-    final candidata = RegistroMerma(
+    // Validación preliminar de reglas de negocio (Criterios 1, 2 y 3)
+    final preCandidata = RegistroMerma(
       id: 'merma_${timestamp.microsecondsSinceEpoch}',
       loteId: loteId.trim(),
       loteCodigo: loteCodigo.trim(),
@@ -220,24 +337,45 @@ class SupabaseMermasRepository implements MermasRepository {
       createdAt: timestamp,
       updatedAt: timestamp,
     );
-
-    // Validación innegociable de reglas de negocio (Criterios 1, 2 y 3)
-    candidata.validarReglasDeNegocio();
+    preCandidata.validarReglasDeNegocio();
 
     try {
+      // 1. Subir la fotografía a Supabase Storage (bucket 'evidencias-mermas')
+      final urlFinal = await _subirEvidenciaASupabaseStorage(
+        evidenciaPath: evidenciaUrl,
+        etapa: etapa,
+        motivo: motivo,
+      );
+
+      // 2. Asegurar que el lote_id sea un UUID válido en public.lotes_produccion
+      final loteUuidReal = await _resolverLoteUuidEnSupabase(
+        loteId: loteId,
+        loteCodigo: loteCodigo,
+        etapa: etapa,
+        cantidadPiezasMinima: cantidadPiezas,
+      );
+
+      final candidataRemota = preCandidata.copyWith(
+        loteId: loteUuidReal,
+        evidenciaUrl: urlFinal,
+      );
+
+      // 3. Insertar registro en la tabla public.lotes_mermas de Supabase
       final response = await _resolvedClient
           .from(_tablaMermas)
-          .insert(candidata.toJson(includeId: false))
+          .insert(candidataRemota.toJson(includeId: false))
           .select()
           .single();
 
       final guardada = RegistroMerma.fromJson(response);
+      // Limpiar semillas de demostración una vez que hay datos reales en Supabase
+      _memoriaMermas.removeWhere((m) => m.id.startsWith('merma_seed_'));
       _actualizarEnMemoria(guardada);
       return guardada;
     } catch (e) {
       debugPrint('[SupabaseMermasRepository] Fallback local al registrar merma: $e');
-      _actualizarEnMemoria(candidata);
-      return candidata;
+      _actualizarEnMemoria(preCandidata);
+      return preCandidata;
     }
   }
 
@@ -267,4 +405,3 @@ class SupabaseMermasRepository implements MermasRepository {
     }
   }
 }
-

@@ -105,6 +105,27 @@ class _RegistrarMermaSheetState extends State<RegistrarMermaSheet> {
     _cantidadController.addListener(() {
       if (mounted) setState(() {});
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final prodVM = context.read<ProduccionViewModel>();
+        if (prodVM.lotes.isEmpty) {
+          await prodVM.cargarLotes();
+        }
+        if (mounted && prodVM.lotes.isNotEmpty) {
+          setState(() {
+            _opcionesLotes = _construirOpcionesLotes();
+            if (!_opcionesLotes.any((o) => o.id == _loteSeleccionado.id)) {
+              _loteSeleccionado = _opcionesLotes.first;
+              _etapaSeleccionada = widget.lotePreseleccionado?.etapaActual ??
+                  _loteSeleccionado.etapaActual;
+              _insumosConsumidos =
+                  InsumoConsumidoMerma.plantillaPorEtapa(_etapaSeleccionada);
+            }
+          });
+        }
+      } catch (_) {}
+    });
   }
 
   List<_OpcionLoteSelector> _construirOpcionesLotes() {
