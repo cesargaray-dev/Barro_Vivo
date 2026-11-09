@@ -38,6 +38,16 @@ class _OpcionLoteSelector {
   final String codigo;
   final EtapaProduccion etapaActual;
   final int cantidadPiezas;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _OpcionLoteSelector &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class RegistrarMermaSheet extends StatefulWidget {
@@ -115,7 +125,11 @@ class _RegistrarMermaSheetState extends State<RegistrarMermaSheet> {
         if (mounted && prodVM.lotes.isNotEmpty) {
           setState(() {
             _opcionesLotes = _construirOpcionesLotes();
-            if (!_opcionesLotes.any((o) => o.id == _loteSeleccionado.id)) {
+            final existenteIdx = _opcionesLotes
+                .indexWhere((o) => o.id == _loteSeleccionado.id);
+            if (existenteIdx != -1) {
+              _loteSeleccionado = _opcionesLotes[existenteIdx];
+            } else {
               _loteSeleccionado = _opcionesLotes.first;
               _etapaSeleccionada = widget.lotePreseleccionado?.etapaActual ??
                   _loteSeleccionado.etapaActual;
@@ -583,7 +597,10 @@ class _RegistrarMermaSheetState extends State<RegistrarMermaSheet> {
 
               // 1. Selección del Lote de Producción
               DropdownButtonFormField<_OpcionLoteSelector>(
-                initialValue: _loteSeleccionado,
+                key: ValueKey('${_loteSeleccionado.id}_${_opcionesLotes.length}'),
+                initialValue: _opcionesLotes.contains(_loteSeleccionado)
+                    ? _loteSeleccionado
+                    : _opcionesLotes.first,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: 'Lote afectado *',
