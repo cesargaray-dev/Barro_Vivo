@@ -11,9 +11,31 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# Variables de entorno y secretos locales (Criterios 6 y 7 de Seguridad)
 .env
 .env.*
 !.env.example
+*.pem
+*.cer
+*.crt
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+
+# Claves de firma y configuración local de Android
+*.jks
+*.keystore
+key.properties
+signing.properties
+**/android/local.properties
+**/android/app/local.properties
+
+# Configuración y secretos de iOS
+*.mobileprovision
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
 
 # IntelliJ related
 *.iml
