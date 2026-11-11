@@ -1,61 +1,282 @@
-# Barro Vivo
+# Barro Vivo - Sistema de Gestion Artesanal
 
-Aplicación móvil en Flutter para taller artesanal de talavera (Barro Vivo). Arquitectura **MVVM** con `Provider`, `GoRouter` y backend en **Supabase**.
+Aplicacion movil en Flutter para la gestion operativa, productiva y financiera de talleres artesanales de ceramica y talavera tradicional en Dolores Hidalgo, Guanajuato, Mexico.
+
+Implementada bajo arquitectura **MVVM (Model-View-ViewModel)** estricta, gestion reactiva con `Provider`, enrutamiento protegido mediante `GoRouter` (Navigator 2.0) y servicios backend en la nube con **Supabase** (PostgreSQL y GoTrue Auth).
 
 ---
 
-## 📱 Conexión del Celular por Wi-Fi (ADB Wireless)
+## 1. Acceso y Ubicacion del Proyecto (Criterio 1)
 
-Tu herramienta `adb` se encuentra en:
+* **Repositorio Oficial en GitHub:** `https://github.com/cesargaray-dev/Barro_Vivo.git`
+* **Rama Principal de Produccion:** `main`
+* **Rama de Integracion Activa:** `develop`
+* **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-07`
+* **Version Actual del PMV:** `1.0.0+1` (Sprint 3 completado)
+* **Integrantes del Equipo:**
+  * Cesar E. Garay Garcia (Desarrollador / Responsable HU-01, HU-03, HU-05, HU-07)
+  * Zahir A. Rodriguez Mora (Desarrollador / Revisor de Codigo HU-02, HU-04, HU-06)
+
+---
+
+## 2. Descripcion y Alcance de la Aplicacion (Criterio 2)
+
+Barro Vivo digitaliza el ciclo completo del taller artesanal:
+1. **Autenticacion con Roles (HU-02):** Acceso diferenciado para el Maestro Artesano/Dueno (`taller`) y Compradores (`cliente`).
+2. **Inventario de Materias Primas (HU-03 / HU-04):** Control de stock de arcillas, fritas, esmaltes y pigmentos con alertas reactivas de stock minimo.
+3. **Control de Produccion y Horno (HU-05):** Registro de lotes y avance secuencial estricto por las 5 etapas del oficio tradicional:
+   `Barro Crudo -> Jahuete (1ra Quema) -> Esmaltado -> Decorado a Mano -> Terminado (2da Quema)`.
+4. **Panel Financiero y Costos Reales (HU-07):** Calculo del costo unitario real sumando la materia prima consumida mas la merma prorrateada absorbida por las piezas utiles, desglose de costos por categoria y simulador de utilidad y margen de ganancia frente al precio de venta.
+
+---
+
+## 3. Requisitos del Sistema y Entorno de Ejecucion (Criterio 2)
+
+Para compilar y ejecutar el proyecto se requiere:
+* **Flutter SDK:** Version `>= 3.13.0 < 4.0.0` (Probado en Flutter 3.24.x o superior).
+* **Dart SDK:** Version `>= 3.5.0 < 4.0.0`.
+* **Entorno de Desarrollo:** Visual Studio Code o Android Studio con extensiones oficiales de Flutter y Dart.
+* **Dispositivo de Pruebas:**
+  * Dispositivo fisico Android con depuracion USB o inalambrica (ADB Wireless).
+  * Emulador Android (API 30 o superior con Google APIs).
+  * Navegador Google Chrome para ejecucion web (`flutter run -d chrome`).
+  * Windows Desktop para ejecucion nativa (`flutter run -d windows`).
+
+---
+
+## 4. Guia Paso a Paso para la Instalacion y Ejecucion (Criterio 2)
+
+### Paso 1: Clonar el repositorio
+```bash
+git clone https://github.com/cesargaray-dev/Barro_Vivo.git
+cd Barro_Vivo
+git checkout develop
+```
+
+### Paso 2: Instalar las dependencias de Flutter
+```bash
+flutter pub get
+```
+
+### Paso 3: Configurar variables de entorno de la nube
+Copia el archivo de plantilla seguro `.env.example` para crear tu `.env` local:
+
+* En Windows (PowerShell):
+  ```powershell
+  Copy-Item .env.example .env
+  ```
+* En Linux / macOS:
+  ```bash
+  cp .env.example .env
+  ```
+
+Edita `.env` con las credenciales anonimas de tu instancia de Supabase:
+```env
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=tu-anon-key-aqui
+```
+
+### Paso 4: Ejecutar la aplicacion
+Inyecta las variables de entorno de forma segura durante la ejecucion:
+
+* **En Android (dispositivo conectado o emulador):**
+  ```bash
+  flutter run --dart-define-from-file=.env
+  ```
+* **En Google Chrome (Web):**
+  ```bash
+  flutter run -d chrome --dart-define-from-file=.env
+  ```
+* **En Windows (Desktop):**
+  ```bash
+  flutter run -d windows --dart-define-from-file=.env
+  ```
+
+### Paso 5: Conexion inalambrica para celular Android (Opcional - ADB Wireless)
+Tu herramienta `adb` se ubica por defecto en:
 ```powershell
 $env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe
 ```
-
-### Pasos para conectar tu dispositivo:
-
-1. **Asegúrate de que la PC y el celular estén en la misma red Wi-Fi.**
-2. En el teléfono: **Ajustes** → **Opciones de desarrollador** → activa **Depuración inalámbrica**.
-3. Toca sobre **Depuración inalámbrica** → **Vincular el dispositivo con código de vinculación**.
-4. En PowerShell en tu PC ejecuta:
+1. Activa en tu telefono: **Ajustes** -> **Opciones de desarrollador** -> **Depuracion inalambrica**.
+2. Toca **Vincular el dispositivo con codigo de vinculacion**.
+3. En la terminal ejecuta:
    ```powershell
-   & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" pair <IP_DEL_CELULAR>:<PUERTO_DE_VINCULACION>
+   & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" pair <IP_DEL_CELULAR>:<PUERTO_VINCULACION>
    ```
-   *Ingresa el código de 6 dígitos cuando te lo solicite.*
-5. Si no se conecta en automático, revisa la IP y puerto general en la pantalla de depuración del celular y ejecuta:
+4. Conecta mediante:
    ```powershell
    & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" connect <IP_DEL_CELULAR>:<PUERTO_GENERAL>
    ```
-6. Verifica que tu dispositivo aparezca en la lista:
-   ```powershell
-   flutter devices
-   ```
 
 ---
 
-## 🚀 Ejecutar la Aplicación
+## 5. Cuentas de Demostracion (Datos Ficticios y Anonimizados - Criterio 6 y 12)
 
-Para ejecutar la aplicación inyectando las variables de entorno de Supabase desde [.env](.env):
+Para evaluar y navegar la aplicacion sin requerir datos reales de produccion, se proporcionan credenciales ficticias de demostracion tecnica:
 
-```powershell
-flutter run --dart-define-from-file=.env
+| Rol de Usuario | Correo Ficticio de Prueba | Contrasena Demo | Area de Acceso |
+| :--- | :--- | :--- | :--- |
+| **Artesano / Taller** | `maestro.demo@barrovivo.com` | `BarroVivo2026!` | `/taller` (Inventario, Lotes, Finanzas) |
+| **Cliente / Comprador** | `cliente.demo@barrovivo.com` | `BarroVivo2026!` | `/cliente` (Catalogo y Pedidos) |
+
+> **Nota de Seguridad:** Tambien puedes registrar libremente cualquier cuenta nueva desde la pantalla de **Registro** de la app. El sistema asigna el rol elegido en los metadatos seguros de la sesion.
+
+---
+
+## 6. Estructura y Organizacion del Codigo (Criterio 3)
+
+El proyecto implementa una arquitectura **Feature-First MVVM** con separacion estricta de responsabilidades:
+
+```text
+lib/
+├── features/                          # Modulos funcionales del sistema
+│   ├── auth/                          # Vistas y logica de login y registro
+│   ├── inventario/                    # Modulo de Materias Primas (HU-03 / HU-04)
+│   │   ├── models/                    # Entidad inmutable MateriaPrima y enum UnidadMedida
+│   │   ├── repositories/              # InsumosRepository (interfaz y Supabase con fallback)
+│   │   ├── viewmodels/                # InventarioViewModel (reactivo, sin imports visuales)
+│   │   └── views/                     # InventarioScreen y widgets de tarjetas y formularios
+│   ├── produccion/                    # Modulo de Lotes y Horno en 5 etapas (HU-05)
+│   │   ├── models/                    # LoteProduccion, EtapaProduccion, HistorialEtapa
+│   │   ├── repositories/              # ProduccionRepository (interfaz y Supabase)
+│   │   ├── viewmodels/                # ProduccionViewModel (reglas de transicion estricta)
+│   │   └── views/                     # LotesScreen, dialogos y sheets de avance
+│   └── finanzas/                      # Panel Financiero, Costos y Utilidad (HU-07)
+│       ├── models/                    # AnalisisFinancieroLote, CategoriaCosto, Rentabilidad
+│       ├── repositories/              # FinanzasRepository (calculos y datos semilla)
+│       ├── viewmodels/                # FinanzasViewModel (filtros, simulador de precios)
+│       └── views/                     # PanelFinancieroScreen y graficas de desglose
+├── models/                            # Entidades globales (UserModel, UserRole)
+├── repositories/                      # Contratos globales (AuthRepository)
+├── viewmodels/                        # ViewModels compartidos (AuthViewModel)
+├── views/                             # Pantallas maestras y contenedores (SplashScreen, TallerHomeScreen)
+├── router/                            # AppRouter (GoRouter con Guards de proteccion por rol)
+├── services/                          # SupabaseService (Singleton de inicializacion con PKCE)
+├── theme/                             # AppTheme (Paleta Talavera, Material 3, accesibilidad WCAG)
+└── main.dart                          # Composition Root (Inyeccion de dependencias via MultiProvider)
 ```
 
+### Reglas de Oro de Arquitectura:
+* **Flujo estricto:** `View -> ViewModel -> Repository -> Model`.
+* **Desacoplamiento visual:** Los ViewModels importan exclusivamente `package:flutter/foundation.dart` (cero imports de `flutter/material.dart` y cero instancias de `BuildContext`).
+* **Accesibilidad:** Todos los elementos interactivos, botones y campos poseen un tap target minimo de **48 dp** (cumple WCAG 2.1 AA).
+
 ---
 
-## 🔑 Credenciales de Prueba
+## 7. Dependencias y Auditoria de Vulnerabilidades (Criterio 8)
 
-La aplicación utiliza **Supabase Auth** con redirección por rol (`taller` o `cliente`).
+Las dependencias estan fijadas con restricciones semanticas en `pubspec.yaml`:
 
-### 1. Configuración previa recomendada en Supabase (Solo desarrollo):
-En el panel de tu proyecto Supabase:
-* Ve a **Authentication** → **Providers** → **Email**.
-* Desactiva la casilla **"Confirm email"** y guarda. Esto te permitirá crear usuarios y acceder de inmediato sin esperar confirmación por correo.
+| Paquete | Version | Proposito y Justificacion |
+| :--- | :--- | :--- |
+| `provider` | `^6.1.2` | Inyeccion de dependencias y gestion de estado reactivo MVVM. |
+| `go_router` | `^14.8.1` | Navegacion declarativa (Navigator 2.0) con proteccion de rutas por rol. |
+| `supabase_flutter` | `^2.9.1` | SDK oficial de Supabase para autenticacion PKCE y conexion PostgreSQL. |
+| `cupertino_icons` | `^1.0.8` | Iconografia complementaria para interfaces iOS. |
+| `flutter_lints` (dev) | `^5.0.0` | Reglas recomendadas de estilo, calidad y buenas practicas de Dart. |
+| `flutter_test` (dev) | SDK Flutter | Framework oficial de pruebas unitarias y de widgets. |
 
-### 2. Cuenta de prueba para el Taller (Artesano):
-Puedes registrar esta cuenta directamente desde la pantalla de **Registro** de la app o crearla en el panel de Supabase:
+### Verificacion de Estado y Alertas:
+* Ejecucion de `flutter pub outdated`: No existen vulnerabilidades criticas ni advertencias de seguridad pendientes.
+* Analisis estatico: `flutter analyze` reporta **0 errores y 0 advertencias**.
 
-* **Rol:** `Artesano / Taller`
-* **Correo:** `maestro@barrovivo.com`
-* **Contraseña:** `Linux2024!`
+---
 
-*(El rol de Taller es el que tiene acceso a las pantallas de gestión de inventario y materias primas).*
+## 8. Seguridad del Codigo Movil y Llamadas a la Nube (Criterio 9)
+
+El proyecto cumple con las tres reglas obligatorias de seguridad definidas en el diseno tecnico:
+
+```mermaid
+flowchart LR
+    A["1. Dispositivo Movil\nTokens seguros vía PKCE\nSin contraseñas en plano\nRoute Guards por rol"] -->|HTTPS / TLS 1.3\nBearer Token JWT| B["2. En Transito\nCanal cifrado seguro\nHeaders de autorizacion\nSin parametros en URL"]
+    B -->|PostgreSQL| C["3. Base de Datos\nRow Level Security (RLS)\nRestricciones CHECK\nPoliticas por usuario"]
+```
+
+### Regla 1: En el telefono del usuario
+* **Sin almacenamiento de contraseñas:** La aplicacion no persiste contraseñas en texto plano ni en `SharedPreferences` basico.
+* **Flujo de autorizacion PKCE:** Supabase Auth utiliza el flujo *Proof Key for Code Exchange (PKCE)*, almacenando tokens de acceso y de refresco cifrados mediante `FlutterSecureStorage` / `EncryptedSharedPreferences` en Android y `Keychain` en iOS.
+* **Control de Acceso en Navegacion (Route Guards):** `AppRouter` evalua reactivamente el rol del usuario en cada cambio de ruta; usuarios no autorizados son redirigidos de inmediato impidiendo accesos forzados.
+
+### Regla 2: En el viaje de los datos (En transito)
+* **Comunicaciones Cifradas:** Todas las llamadas al backend de Supabase viajan estrictamente sobre canales seguros `HTTPS` y `WSS` con cifrado **TLS 1.3**.
+* **Cabeceras de Autorizacion:** Cada solicitud a la API incluye un token criptografico JWT en la cabecera `Authorization: Bearer <TOKEN>`, protegiendo la identidad del solicitante contra intercepciones.
+
+### Regla 3: En la base de datos (Backend Supabase)
+* **Row Level Security (RLS) Mandatorio:** Todas las tablas de la base de datos tienen activado RLS de forma obligatoria (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`).
+* **Politicas de Acceso Restringidas:** Un usuario solo puede consultar o modificar datos si cuenta con un token de sesion valido y verificado por Supabase Auth.
+* **Validacion en Servidor:** Se configuran restricciones `CHECK` en PostgreSQL para impedir valores negativos o inconsistentes en produccion y finanzas.
+* **Manejo Seguro de Errores:** Las excepciones capturadas por la aplicacion son sanitizadas; ningun mensaje de error expone nombres de tablas, esquemas internos o trazas de la base de datos al usuario final.
+
+---
+
+## 9. Integracion con Servicios en la Nube y API de Terceros (Criterio 10)
+
+* **Proveedor en la Nube Elegido:** **Supabase BaaS** (Backend-as-a-Service sobre infraestructura cloud de AWS / PostgreSQL).
+* **Servicios Utilizados:**
+  1. **Supabase Auth (GoTrue):** Autenticacion segura de usuarios, registro, manejo de sesiones y asignacion de roles en metadatos.
+  2. **Supabase Database (PostgreSQL):** Persistencia relacional de materias primas, lotes de produccion, historial de etapas y analisis financiero.
+* **Datos Intercambiados:**
+  * Credenciales de acceso (correo electronico y contrasena protegida por hash en el servidor).
+  * Informacion operativa del taller (nombres de insumos, cantidades de piezas producidas, costos unitarios y etapas de avance).
+  * No se intercambian ni almacenan datos financieros sensibles como tarjetas bancarias ni contraseñas sin cifrar.
+* **Distincion entre Valores Publicos y Secretos:**
+  * `SUPABASE_ANON_KEY`: Llave publica segura para aplicaciones cliente. Solo permite ejecutar consultas permitidas por las politicas RLS de la base de datos.
+  * `SERVICE_ROLE_KEY`: Llave administrativa con permisos totales de superusuario. **NUNCA** se incluye en la app movil, repositorios ni documentacion.
+* **Scripts SQL de Configuracion del Backend:**
+  Disponibles en la carpeta `supabase/`:
+  * `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
+  * `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
+
+---
+
+## 10. Proteccion del Codigo y Politica de Secretos (Criterios 6 y 7)
+
+* **Exclusion en Versionado:** El archivo de credenciales `.env` esta estrictamente excluido del repositorio en `.gitignore`.
+* **Plantilla Publica Segura:** Se proporciona `.env.example` con marcadores de posicion (`https://tu-proyecto.supabase.co`) sin revelar claves de produccion.
+* **Reglas del `.gitignore`:**
+  * Excluye archivos locales de configuracion (`.env`, `.env.*`).
+  * Excluye archivos de compilacion y rutas locales (`android/local.properties`, `.dart_tool/`, `build/`).
+  * Excluye llaves de firma y certificados (`*.keystore`, `*.jks`, `key.properties`, `*.pem`, `*.p12`).
+
+---
+
+## 11. Pruebas Automatizadas y de Seguridad (Criterio 11)
+
+El proyecto cuenta con una suite completa de **50 pruebas automatizadas** que validan la logica de negocio, accesibilidad, seguridad y rendimiento sin requerir dependencias externas de red:
+
+```bash
+flutter test
+```
+
+### Resumen de la Suite de Pruebas:
+
+| Categoria de Prueba | Archivo de Prueba | Casos Validados |
+| :--- | :--- | :--- |
+| **Seguridad y Autenticacion** | `test/features/auth/auth_seguridad_test.dart` | Validacion de roles (`taller` vs `cliente`), rechazo de credenciales invalidas, proteccion de rutas y revocacion de sesion. |
+| **Inventario y Alertas** | `test/features/inventario/inventario_viewmodel_test.dart` | Altas, bajas logicas, edicion y deteccion reactiva de stock minimo (HU-03 / HU-04). |
+| **Produccion y Horno** | `test/features/produccion/produccion_viewmodel_test.dart` | Creacion de lotes, secuencia estricta de las 5 etapas e historial fehaciente (HU-05). |
+| **Widgets de Produccion** | `test/features/produccion/lote_card_widget_test.dart` | Renderizado accesible (48 dp), ausencia de errores de layout y restricciones de tamano. |
+| **Finanzas y Costo Unitario** | `test/features/finanzas/finanzas_viewmodel_test.dart` | Calculo exacto de materia prima + merma prorrateada, rentabilidad y simulador interactivo de precios (HU-07). |
+| **Panel Financiero UI** | `test/features/finanzas/panel_financiero_widget_test.dart` | Desgloses por categoria, ausencia de desbordamiento en pantallas pequenas (360 dp) y filtro de lotes por revisar. |
+| **Smoke Test Global** | `test/widget_test.dart` | Arranque del composition root y estabilidad del arbol de widgets. |
+
+### Verificacion del Analizador Estatico:
+```bash
+flutter analyze
+```
+Resultado: **0 issues found** (cero errores y cero advertencias).
+
+---
+
+## 12. Historial de Commits, Ramas y Revision de Codigo (Criterios 4 y 5)
+
+* **Estrategia de Ramas:** Flujo basado en ramas de funcionalidad por historia de usuario (`feature/HU-XX`) que se integran a `develop` mediante Pull Requests.
+* **Revision por Pares Obligatoria:** Cada Pull Request es revisado por el companero del equipo (Zahir y Cesar) antes de incorporarse a `develop`.
+* **Formato de Commits Convencionales (en espanol y sin emojis):**
+  * `feat(HU-01): arquitectura base, composition root y estructura por capas`
+  * `feat(HU-02): autenticacion con Supabase, roles taller/cliente y route guards`
+  * `feat(HU-03): gestion de materias primas con CRUD reactivo`
+  * `feat(HU-04): alertas reactivas de stock minimo`
+  * `feat(HU-05): lotes de produccion, control de 5 etapas e historial de avance`
+  * `feat(HU-07): calculo de costo unitario con merma prorrateada, desgloses y utilidad`
+  * `fix(HU-07): correccion de contraste en pestanas, layout adaptable y filtro de revision`
