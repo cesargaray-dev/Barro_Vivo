@@ -11,7 +11,7 @@ Implementada bajo arquitectura **MVVM (Model-View-ViewModel)** estricta, gestion
 * **Repositorio Oficial en GitHub:** `https://github.com/cesargaray-dev/Barro_Vivo.git`
 * **Rama Principal de Produccion:** `main`
 * **Rama de Integracion Activa:** `develop`
-* **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-07`
+* **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-07` y `feature/seguridad-nube` (endurecimiento de seguridad, CI/Dependabot y documentacion)
 * **Version Actual del PMV:** `1.0.0+1` (Sprint 4 en curso: HU-06 en revision)
 * **Tablero de gestion (Trello):** `https://trello.com/b/iggmb32z/barrovivo` (backlog, sprint actual, en curso, en revision y hecho)
 * **Integrantes del Equipo:**
@@ -27,7 +27,8 @@ Barro Vivo digitaliza el ciclo completo del taller artesanal:
 2. **Inventario de Materias Primas (HU-03 / HU-04):** Control de stock de arcillas, fritas, esmaltes y pigmentos con alertas reactivas de stock minimo.
 3. **Control de Produccion y Horno (HU-05):** Registro de lotes y avance secuencial estricto por las 5 etapas del oficio tradicional:
    `Barro Crudo -> Jahuete (1ra Quema) -> Esmaltado -> Decorado a Mano -> Terminado (2da Quema)`.
-4. **Panel Financiero y Costos Reales (HU-07):** Calculo del costo unitario real sumando la materia prima consumida mas la merma prorrateada absorbida por las piezas utiles, desglose de costos por categoria y simulador de utilidad y margen de ganancia frente al precio de venta.
+4. **Registro de Mermas con Costo Estimado (HU-06):** Captura de piezas perdidas indicando etapa, motivo, evidencia fotografica obligatoria (camara/galeria almacenada en Supabase Storage) y calculo del costo por insumos consumidos.
+5. **Panel Financiero y Costos Reales (HU-07):** Calculo del costo unitario real sumando la materia prima consumida mas la merma prorrateada absorbida por las piezas utiles, desglose de costos por categoria y simulador de utilidad y margen de ganancia frente al precio de venta.
 
 ---
 
@@ -142,6 +143,11 @@ lib/
 │   │   ├── repositories/              # ProduccionRepository (interfaz y Supabase)
 │   │   ├── viewmodels/                # ProduccionViewModel (reglas de transicion estricta)
 │   │   └── views/                     # LotesScreen, dialogos y sheets de avance
+│   ├── mermas/                        # Registro de Mermas y Evidencia Fotografica (HU-06)
+│   │   ├── models/                    # RegistroMerma, MotivoMerma, InsumoConsumidoMerma
+│   │   ├── repositories/              # MermasRepository (DB + Supabase Storage)
+│   │   ├── viewmodels/                # MermasViewModel (validaciones y filtros)
+│   │   └── views/                     # MermasScreen, MermaCard, RegistrarMermaSheet
 │   └── finanzas/                      # Panel Financiero, Costos y Utilidad (HU-07)
 │       ├── models/                    # AnalisisFinancieroLote, CategoriaCosto, Rentabilidad
 │       ├── repositories/              # FinanzasRepository (calculos y datos semilla)
@@ -179,9 +185,13 @@ Las dependencias estan fijadas con restricciones semanticas en `pubspec.yaml`:
 | `flutter_test` (dev) | SDK Flutter | Framework oficial de pruebas unitarias y de widgets. |
 
 ### Verificacion de Estado y Alertas:
-* **Dependabot** (`.github/dependabot.yml`): revisa semanalmente `pubspec.yaml` y las acciones de GitHub y abre PR con actualizaciones y correcciones de seguridad. Las alertas se revisan en la pestana *Security* del repositorio.
-* **Integracion continua** (`.github/workflows/ci.yml`): en cada push y pull request ejecuta `flutter pub get`, `flutter analyze`, `flutter test` y una busqueda de secretos en el codigo.
-* Revision manual: ejecutar `flutter pub outdated` antes de cada entrega y registrar en el PR las dependencias que no se actualicen, con su justificacion.
+* **Dependabot** (`.github/dependabot.yml`): revisa semanalmente `pubspec.yaml` y las acciones de GitHub y abre PR con actualizaciones y correcciones de seguridad.
+* **Integracion continua** (`.github/workflows/ci.yml`): en cada push y pull request ejecuta `flutter pub get`, `flutter analyze`, `flutter pub outdated`, `flutter test` y una busqueda de secretos en el codigo.
+* **Resultado de `flutter pub outdated` (revision actual):**
+  * `provider` (`^6.1.2`) e `image_picker` (`^1.2.4`): en su version vigente sin alertas.
+  * `supabase_flutter` (`2.18.0`, parche disponible `2.18.3`): actualizable dentro de la restriccion `^2.9.1`.
+  * `go_router` (`14.8.1`), `cupertino_icons` (`1.0.9`) y `flutter_lints` (`5.0.0`): fijados en versiones estables compatibles con el codigo actual (solo hay saltos mayores disponibles, no obligatorios).
+* Analisis estatico: `flutter analyze` reporta **0 issues found**.
 
 ---
 
@@ -191,15 +201,15 @@ El proyecto cumple con las tres reglas obligatorias de seguridad definidas en el
 
 ```mermaid
 flowchart LR
-    A["1. Dispositivo Movil\nTokens seguros vía PKCE\nSin contraseñas en plano\nRoute Guards por rol"] -->|HTTPS / TLS 1.3\nBearer Token JWT| B["2. En Transito\nCanal cifrado seguro\nHeaders de autorizacion\nSin parametros en URL"]
-    B -->|PostgreSQL| C["3. Base de Datos\nRow Level Security (RLS)\nRestricciones CHECK\nPoliticas por usuario"]
+    A["1. Dispositivo Movil\nFlujo PKCE + allowBackup=false\nusesCleartextTraffic=false\nRoute Guards por rol"] -->|HTTPS / TLS\nBearer Token JWT| B["2. En Transito\nCanal cifrado HTTPS\nValidacion de URL\nSin secretos en URL"]
+    B -->|PostgreSQL| C["3. Base de Datos y Storage\nRow Level Security (RLS)\nRestricciones CHECK\nSin acceso anonimo"]
 ```
 
 ### Regla 1: En el telefono del usuario
 * **Sin almacenamiento de contraseñas:** La aplicacion no guarda contraseñas; solo la sesion que administra el SDK de Supabase.
 * **Flujo de autorizacion PKCE:** Supabase Auth utiliza el flujo *Proof Key for Code Exchange (PKCE)*. La sesion (tokens de acceso y de refresco) la persiste el SDK `supabase_flutter` en el almacenamiento local privado de la aplicacion. Mejora pendiente: moverla a almacenamiento cifrado (`flutter_secure_storage`).
 * **Control de Acceso en Navegacion (Route Guards):** `AppRouter` evalua reactivamente el rol del usuario en cada cambio de ruta; usuarios no autorizados son redirigidos. Esto protege la interfaz, **no** sustituye a la autorizacion del servidor (Regla 3).
-* **Permisos minimos del dispositivo (HU-06):** solo `CAMERA` y lectura de imagenes/galeria (`READ_MEDIA_IMAGES`). Los permisos se declaran en `AndroidManifest.xml` e `Info.plist`; si el usuario los niega, la app muestra un mensaje sin cerrarse.
+* **Permisos minimos del dispositivo (HU-06):** solo `CAMERA` y lectura de imagenes/galeria (`READ_MEDIA_IMAGES`). Los permisos se declaran en `AndroidManifest.xml` e `Info.plist`; ademas `AndroidManifest.xml` desactiva respaldos locales (`android:allowBackup="false"`) y bloquea trafico HTTP plano (`android:usesCleartextTraffic="false"`). Si el usuario niega permisos de camara/galeria, la app muestra un mensaje sin cerrarse.
 
 ### Regla 2: En el viaje de los datos (En transito)
 * **Comunicaciones Cifradas:** Todas las llamadas al backend de Supabase usan `HTTPS` (y `WSS`); la URL del proyecto se valida como `https://` en la configuracion.
@@ -209,7 +219,7 @@ flowchart LR
 * **Row Level Security (RLS) Mandatorio:** Todas las tablas tienen RLS activo (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`).
 * **Sin acceso anonimo:** Las politicas permiten operar solo al rol `authenticated`. El script `supabase/schema_hardening_rls.sql` elimina cualquier politica `anon` previa; se verifica con la consulta incluida en el propio script (debe devolver 0 filas).
 * **Validacion en Servidor:** Restricciones `CHECK` en PostgreSQL impiden valores negativos o inconsistentes (cantidades > 0, costos >= 0, evidencia fotografica no vacia en mermas, etapas y motivos validos).
-* **Storage con permisos minimos:** el bucket `evidencias-mermas` solo acepta `image/jpeg` e `image/png` de hasta 5 MB, y solo usuarios autenticados pueden subir. No hay politicas de borrado ni actualizacion. La lectura es publica por URL porque las fotos son de piezas danadas y no contienen datos personales.
+* **Storage con permisos minimos:** el bucket `evidencias-mermas` (`public = true` para mostrar imagenes por URL publica sin datos personales) solo acepta `image/jpeg` e `image/png` de hasta 5 MB. Las politicas en `storage.objects` permiten `SELECT` e `INSERT` unicamente al rol `authenticated`, sin politicas de borrado ni actualizacion.
 * **Limitacion conocida:** el rol (`taller` / `cliente`) se guarda en los metadatos de usuario, por lo que RLS distingue usuarios autenticados pero aun no distingue roles. Mejora prioritaria: mover el rol a `app_metadata` (solo escribible desde el servidor) y filtrarlo en las politicas RLS.
 * **Manejo Seguro de Errores:** La interfaz muestra mensajes genericos; los detalles tecnicos solo se escriben en el log de depuracion (`debugPrint`) y no se muestran al usuario.
 
@@ -247,8 +257,8 @@ flowchart LR
   * Excluye archivos locales de configuracion (`.env`, `.env.*`).
   * Excluye archivos de compilacion y rutas locales (`android/local.properties`, `.dart_tool/`, `build/`).
   * Excluye llaves de firma y certificados (`*.keystore`, `*.jks`, `key.properties`, `*.pem`, `*.p12`).
-* **Revision del historial:** los primeros commits de `lib/services/supabase_service.dart` (`015f2c0`, `1e59aa3`, `9d29c7f`) tenian un valor escrito directamente en el codigo, antes de usar `--dart-define-from-file=.env`. Se trata como posible exposicion: el equipo debe verificar en el panel de Supabase (*Project Settings → API*) si esa llave sigue vigente y, de ser asi, regenerarla. Hoy ningun archivo versionado contiene llaves; el CI (`.github/workflows/ci.yml`) falla si detecta `service_role`, `sb_secret_` o un JWT en `lib/`, `test/` o `supabase/`.
-* **Si necesitas reportar un hallazgo de seguridad:** avisa de forma privada a los integrantes del equipo; no publiques el valor en issues ni PR.
+* **Revision del historial:** los commits iniciales de `lib/services/supabase_service.dart` (`015f2c0`, `1e59aa3`, `9d29c7f`) contenian unicamente marcadores ficticios (`https://xxxxxxxxxxxxxxxxxxx.supabase.co` y `eyJhbGci...PLACEHOLDER`) antes de migrar a `--dart-define-from-file=.env`. No existen claves reales (`sb_secret_`, `service_role` ni llaves privadas) en el historial ni en la rama actual; las *Publishable keys* de Supabase estan disenadas para uso cliente con RLS habilitado y aun asi se mantienen fuera de Git dentro de `.env` (ignorado por `.gitignore`). El CI (`.github/workflows/ci.yml`) verifica en cada cambio que no entren claves al repositorio.
+* **Si necesitas reportar un hallazgo de seguridad:** avisa de forma privada a los integrantes del equipo; no publiques valores sensibles en issues ni PR.
 
 ---
 

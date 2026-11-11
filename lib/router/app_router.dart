@@ -17,6 +17,7 @@
 //   – Rol 'cliente'   → redirige a /cliente
 //   – En login/reg. autenticado → redirige según rol
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,10 +59,58 @@ class AppRoutes {
 class AppRouter {
   AppRouter._();
 
+  /// Evalúa la regla de protección de rutas según estado de sesión y rol.
+  @visibleForTesting
+  static String? evaluateRedirect({
+    required AuthStatus status,
+    required UserRole? role,
+    required String location,
+  }) {
+    // Rutas públicas (no requieren sesión).
+    const publicRoutes = [
+      AppRoutes.splash,
+      AppRoutes.login,
+      AppRoutes.registro,
+    ];
+    final isPublic = publicRoutes.contains(location);
+
+    // Aún inicializando: dejamos pasar al splash.
+    if (status == AuthStatus.initial) {
+      return location == AppRoutes.splash ? null : AppRoutes.splash;
+    }
+
+    // Sin sesión: redirigir a login.
+    if (status == AuthStatus.unauthenticated ||
+        status == AuthStatus.error) {
+      // Si estamos en el Splash, debemos enviarlo obligatoriamente al login.
+      if (location == AppRoutes.splash) return AppRoutes.login;
+      // Si ya está en login o registro (rutas públicas), lo dejamos ahí.
+      return isPublic ? null : AppRoutes.login;
+    }
+
+    // Con sesión activa en ruta pública (login/registro): redirigir
+    // automáticamente al área correspondiente al rol.
+    if (status == AuthStatus.authenticated && isPublic) {
+      return _homeForRole(role);
+    }
+
+    // Con sesión: verificar que el rol coincide con la ruta protegida.
+    if (status == AuthStatus.authenticated) {
+      if (location.startsWith('/taller') && role != UserRole.taller) {
+        return _homeForRole(role);
+      }
+      if (location.startsWith('/cliente') && role != UserRole.cliente) {
+        return _homeForRole(role);
+      }
+    }
+
+    return null; // Sin redirección.
+  }
+
   static GoRouter create(AuthViewModel authViewModel) {
     return GoRouter(
       initialLocation: AppRoutes.splash,
-      debugLogDiagnostics: true,
+      debugLogDiagnostics: kDebugMode,
 
       // ── Listener reactivo ────────────────────────────────────────────────
       // Cuando [AuthViewModel] notifica cambios, el router re-evalúa el guard.
@@ -69,49 +118,11 @@ class AppRouter {
 
       // ── Guard global (redirección por estado y rol) ───────────────────────
       redirect: (BuildContext context, GoRouterState state) {
-        final status = authViewModel.status;
-        final role = authViewModel.currentRole;
-        final location = state.matchedLocation;
-
-        // Rutas públicas (no requieren sesión).
-        const publicRoutes = [
-          AppRoutes.splash,
-          AppRoutes.login,
-          AppRoutes.registro,
-        ];
-        final isPublic = publicRoutes.contains(location);
-
-        // Aún inicializando: dejamos pasar al splash.
-        if (status == AuthStatus.initial) {
-          return location == AppRoutes.splash ? null : AppRoutes.splash;
-        }
-
-        // Sin sesión: redirigir a login.
-        if (status == AuthStatus.unauthenticated ||
-            status == AuthStatus.error) {
-          // Si estamos en el Splash, debemos enviarlo obligatoriamente al login.
-          if (location == AppRoutes.splash) return AppRoutes.login;
-          // Si ya está en login o registro (rutas públicas), lo dejamos ahí.
-          return isPublic ? null : AppRoutes.login;
-        }
-
-        // Con sesión activa en ruta pública (login/registro): redirigir
-        // automáticamente al área correspondiente al rol.
-        if (status == AuthStatus.authenticated && isPublic) {
-          return _homeForRole(role);
-        }
-
-        // Con sesión: verificar que el rol coincide con la ruta protegida.
-        if (status == AuthStatus.authenticated) {
-          if (location.startsWith('/taller') && role != UserRole.taller) {
-            return _homeForRole(role);
-          }
-          if (location.startsWith('/cliente') && role != UserRole.cliente) {
-            return _homeForRole(role);
-          }
-        }
-
-        return null; // Sin redirección.
+        return evaluateRedirect(
+          status: authViewModel.status,
+          role: authViewModel.currentRole,
+          location: state.matchedLocation,
+        );
       },
 
       routes: [
@@ -175,7 +186,7 @@ class AppRouter {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Página no encontrada.\n${state.error}',
+              'Página no encontrada.',
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
