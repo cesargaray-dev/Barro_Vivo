@@ -108,7 +108,8 @@ class InventarioViewModel extends ChangeNotifier {
       _errorMessage = e.message;
     } catch (e) {
       _status = InventarioStatus.error;
-      _errorMessage = 'Ocurrió un error inesperado al cargar el inventario: $e';
+      debugPrint('[inventario_viewmodel] Ocurrió un error inesperado al cargar el inventario: $e');
+      _errorMessage = 'Ocurrió un error inesperado al cargar el inventario. Intenta de nuevo.';
     } finally {
       notifyListeners();
     }
@@ -149,7 +150,8 @@ class InventarioViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Error al registrar la materia prima: $e';
+      debugPrint('[inventario_viewmodel] Error al registrar la materia prima: $e');
+      _errorMessage = 'Error al registrar la materia prima. Intenta de nuevo.';
       _isSaving = false;
       notifyListeners();
       return false;
@@ -185,7 +187,8 @@ class InventarioViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Error al actualizar la materia prima: $e';
+      debugPrint('[inventario_viewmodel] Error al actualizar la materia prima: $e');
+      _errorMessage = 'Error al actualizar la materia prima. Intenta de nuevo.';
       _isSaving = false;
       notifyListeners();
       return false;
@@ -212,7 +215,8 @@ class InventarioViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Error al dar de baja la materia prima: $e';
+      debugPrint('[inventario_viewmodel] Error al dar de baja la materia prima: $e');
+      _errorMessage = 'Error al dar de baja la materia prima. Intenta de nuevo.';
       notifyListeners();
       return false;
     }

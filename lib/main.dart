@@ -22,6 +22,8 @@ import 'features/inventario/repositories/insumos_repository.dart';
 import 'features/inventario/viewmodels/inventario_viewmodel.dart';
 import 'features/produccion/repositories/produccion_repository.dart';
 import 'features/produccion/viewmodels/produccion_viewmodel.dart';
+import 'features/mermas/repositories/mermas_repository.dart';
+import 'features/mermas/viewmodels/mermas_viewmodel.dart';
 import 'features/finanzas/repositories/finanzas_repository.dart';
 import 'features/finanzas/viewmodels/finanzas_viewmodel.dart';
 import 'repositories/auth_repository.dart';
@@ -44,6 +46,7 @@ Future<void> main() async {
   final AuthRepository authRepository = SupabaseAuthRepository();
   final InsumosRepository insumosRepository = SupabaseInsumosRepository();
   final ProduccionRepository produccionRepository = SupabaseProduccionRepository();
+  final MermasRepository mermasRepository = SupabaseMermasRepository();
   final FinanzasRepository finanzasRepository = SupabaseFinanzasRepository();
 
   // ── 3. Levantar la aplicación ──────────────────────────────────────────
@@ -52,6 +55,7 @@ Future<void> main() async {
       authRepository: authRepository,
       insumosRepository: insumosRepository,
       produccionRepository: produccionRepository,
+      mermasRepository: mermasRepository,
       finanzasRepository: finanzasRepository,
     ),
   );
@@ -67,6 +71,7 @@ class BarroVivoApp extends StatefulWidget {
     required this.authRepository,
     this.insumosRepository,
     this.produccionRepository,
+    this.mermasRepository,
     this.finanzasRepository,
   });
 
@@ -78,6 +83,9 @@ class BarroVivoApp extends StatefulWidget {
 
   /// Repositorio de producción de lotes inyectado desde [main] o pruebas.
   final ProduccionRepository? produccionRepository;
+
+  /// Repositorio de registro de mermas inyectado desde [main] o pruebas (HU-06).
+  final MermasRepository? mermasRepository;
 
   /// Repositorio financiero inyectado desde [main] o pruebas.
   final FinanzasRepository? finanzasRepository;
@@ -92,6 +100,7 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
   late final AuthViewModel _authViewModel;
   late final InventarioViewModel _inventarioViewModel;
   late final ProduccionViewModel _produccionViewModel;
+  late final MermasViewModel _mermasViewModel;
   late final FinanzasViewModel _finanzasViewModel;
 
   @override
@@ -104,6 +113,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _produccionViewModel = ProduccionViewModel(
       produccionRepository: widget.produccionRepository ?? SupabaseProduccionRepository(),
     );
+    _mermasViewModel = MermasViewModel(
+      mermasRepository: widget.mermasRepository ?? SupabaseMermasRepository(),
+    );
     _finanzasViewModel = FinanzasViewModel(
       finanzasRepository: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
     );
@@ -114,6 +126,7 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _authViewModel.dispose();
     _inventarioViewModel.dispose();
     _produccionViewModel.dispose();
+    _mermasViewModel.dispose();
     _finanzasViewModel.dispose();
     super.dispose();
   }
@@ -132,6 +145,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         Provider<ProduccionRepository>.value(
           value: widget.produccionRepository ?? SupabaseProduccionRepository(),
         ),
+        Provider<MermasRepository>.value(
+          value: widget.mermasRepository ?? SupabaseMermasRepository(),
+        ),
         Provider<FinanzasRepository>.value(
           value: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
         ),
@@ -145,6 +161,9 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         ),
         ChangeNotifierProvider<ProduccionViewModel>.value(
           value: _produccionViewModel,
+        ),
+        ChangeNotifierProvider<MermasViewModel>.value(
+          value: _mermasViewModel,
         ),
         ChangeNotifierProvider<FinanzasViewModel>.value(
           value: _finanzasViewModel,

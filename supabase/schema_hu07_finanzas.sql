@@ -54,13 +54,8 @@ CREATE POLICY "Permitir actualizacion de finanzas a usuarios autenticados"
     USING (true)
     WITH CHECK (true);
 
--- Políticas de desarrollo local (rol anon)
+-- Seguridad: sin acceso anónimo (rol anon); solo usuarios autenticados.
 DROP POLICY IF EXISTS "Permitir acceso anon en desarrollo finanzas" ON public.lotes_finanzas;
-CREATE POLICY "Permitir acceso anon en desarrollo finanzas"
-    ON public.lotes_finanzas FOR ALL
-    TO anon
-    USING (true)
-    WITH CHECK (true);
 
 -- 5. Trigger de actualización automática para updated_at
 DROP TRIGGER IF EXISTS set_finanzas_updated_at ON public.lotes_finanzas;

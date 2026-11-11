@@ -27,7 +27,7 @@ class FinanzasException implements Exception {
 /// Fallo de red o comunicación con el backend al consultar finanzas.
 class NetworkFinanzasException extends FinanzasException {
   const NetworkFinanzasException(String detail)
-      : super('Error de conexión en el módulo financiero: $detail');
+      : super('Error de conexión en el módulo financiero. Verifica tu conexión e intenta de nuevo.');
 }
 
 /// No se encontró el registro de costos del lote solicitado.

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../../mermas/views/widgets/registrar_merma_sheet.dart';
 import '../../models/lote_produccion.dart';
 import '../../viewmodels/produccion_viewmodel.dart';
 import 'avanzar_etapa_dialog.dart';
@@ -102,11 +103,23 @@ class LoteCard extends StatelessWidget {
                   icon: const Icon(Icons.more_vert_rounded, size: 20, color: Colors.black45),
                   padding: EdgeInsets.zero,
                   onSelected: (opcion) {
-                    if (opcion == 'baja') {
+                    if (opcion == 'merma') {
+                      RegistrarMermaSheet.show(context, lotePreseleccionado: lote);
+                    } else if (opcion == 'baja') {
                       _confirmarBaja(context);
                     }
                   },
                   itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'merma',
+                      child: Row(
+                        children: [
+                          Icon(Icons.broken_image_outlined, size: 18, color: AppColors.terracotta),
+                          SizedBox(width: 8),
+                          Text('Registrar merma (HU-06)'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'baja',
                       child: Row(
@@ -146,9 +159,35 @@ class LoteCard extends StatelessWidget {
               runSpacing: 10,
               children: [
                 EtapaBadge(etapa: etapa),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    // Botón: Registrar Merma (HU-06)
+                    OutlinedButton.icon(
+                      onPressed: () => RegistrarMermaSheet.show(
+                        context,
+                        lotePreseleccionado: lote,
+                      ),
+                      icon: const Icon(
+                        Icons.broken_image_outlined,
+                        size: 15,
+                        color: AppColors.terracotta,
+                      ),
+                      label: const Text(
+                        'Merma',
+                        style: TextStyle(fontSize: 12, color: AppColors.terracotta),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.terracotta,
+                        minimumSize: const Size(0, 36),
+                        side: BorderSide(color: AppColors.terracotta.withValues(alpha: 0.4)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+
                     // Botón: Ver Historial (Criterio 3)
                     OutlinedButton.icon(
                       onPressed: () => HistorialEtapasSheet.show(context, lote),
@@ -162,7 +201,6 @@ class LoteCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
-                    const SizedBox(width: 8),
 
                     // Botón: Avanzar a Siguiente Etapa (Criterio 2)
                     if (puedeAvanzar && proximaEtapa != null)

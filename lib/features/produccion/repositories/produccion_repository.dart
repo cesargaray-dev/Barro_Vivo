@@ -25,7 +25,7 @@ class ProduccionException implements Exception {
 /// Fallo de red o conexión con la base de datos de producción.
 class NetworkProduccionException extends ProduccionException {
   const NetworkProduccionException(String detail)
-      : super('Error de conexión con el módulo de producción: $detail');
+      : super('Error de conexión con el módulo de producción. Verifica tu conexión e intenta de nuevo.');
 }
 
 /// Lote no encontrado en el sistema.

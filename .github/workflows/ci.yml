@@ -1,0 +1,40 @@
+name: CI
+
+# Análisis estático y pruebas en cada push y pull request.
+# No requiere secretos: las pruebas usan repositorios simulados (sin red).
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Análisis estático
+        run: flutter analyze
+
+      - name: Pruebas unitarias y de widgets
+        run: flutter test
+
+      - name: Detectar secretos escritos en el código
+        run: |
+          if grep -rEn "sb_secret_|service_role|eyJhbGci[A-Za-z0-9_-]{20,}" lib test supabase; then
+            echo "Posible secreto detectado en el código fuente."
+            exit 1
+          fi
+          echo "Sin secretos detectados."

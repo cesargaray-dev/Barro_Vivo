@@ -124,7 +124,8 @@ class FinanzasViewModel extends ChangeNotifier {
       _errorMessage = e.message;
     } catch (e) {
       _status = FinanzasStatus.error;
-      _errorMessage = 'Ocurrió un error inesperado al calcular las finanzas: $e';
+      debugPrint('[finanzas_viewmodel] Ocurrió un error inesperado al calcular las finanzas: $e');
+      _errorMessage = 'Ocurrió un error inesperado al calcular las finanzas. Intenta de nuevo.';
     } finally {
       notifyListeners();
     }
@@ -226,7 +227,8 @@ class FinanzasViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Error al actualizar el precio de venta: $e';
+      debugPrint('[finanzas_viewmodel] Error al actualizar el precio de venta: $e');
+      _errorMessage = 'Error al actualizar el precio de venta. Intenta de nuevo.';
       notifyListeners();
       return false;
     }
@@ -247,7 +249,8 @@ class FinanzasViewModel extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = 'Error al guardar el análisis del lote: $e';
+      debugPrint('[finanzas_viewmodel] Error al guardar el análisis del lote: $e');
+      _errorMessage = 'Error al guardar el análisis del lote. Intenta de nuevo.';
       notifyListeners();
       return false;
     }

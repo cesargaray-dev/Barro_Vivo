@@ -88,7 +88,8 @@ class ProduccionViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       _status = ProduccionStatus.error;
     } catch (e) {
-      _errorMessage = 'Error inesperado al cargar lotes: $e';
+      debugPrint('[produccion_viewmodel] Error inesperado al cargar lotes: $e');
+      _errorMessage = 'Error inesperado al cargar lotes. Intenta de nuevo.';
       _status = ProduccionStatus.error;
     } finally {
       notifyListeners();
@@ -140,7 +141,8 @@ class ProduccionViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Error al crear el lote: $e';
+      debugPrint('[produccion_viewmodel] Error al crear el lote: $e');
+      _errorMessage = 'Error al crear el lote. Intenta de nuevo.';
       return false;
     } finally {
       _isSaving = false;
@@ -195,7 +197,8 @@ class ProduccionViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Error al avanzar de etapa: $e';
+      debugPrint('[produccion_viewmodel] Error al avanzar de etapa: $e');
+      _errorMessage = 'Error al avanzar de etapa. Intenta de nuevo.';
       return false;
     } finally {
       _isSaving = false;
@@ -231,7 +234,8 @@ class ProduccionViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Error al dar de baja el lote: $e';
+      debugPrint('[produccion_viewmodel] Error al dar de baja el lote: $e');
+      _errorMessage = 'Error al dar de baja el lote. Intenta de nuevo.';
       return false;
     } finally {
       _isSaving = false;

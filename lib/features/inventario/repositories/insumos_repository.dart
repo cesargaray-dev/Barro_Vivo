@@ -21,7 +21,7 @@ class InsumoException implements Exception {
 /// Fallo al conectar o consultar el servicio de base de datos.
 class NetworkInsumoException extends InsumoException {
   const NetworkInsumoException(String detail)
-      : super('Error de conexión con el inventario: $detail');
+      : super('Error de conexión con el inventario. Verifica tu conexión e intenta de nuevo.');
 }
 
 /// Insumo no encontrado en la base de datos.
