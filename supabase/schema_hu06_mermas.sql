@@ -76,12 +76,8 @@ CREATE POLICY "Permitir actualizacion de mermas a usuarios autenticados"
     USING (true)
     WITH CHECK (length(trim(evidencia_url)) > 0 AND cantidad_piezas > 0);
 
+-- Seguridad: sin acceso anónimo (rol anon); solo usuarios autenticados.
 DROP POLICY IF EXISTS "Permitir acceso anon en desarrollo mermas" ON public.lotes_mermas;
-CREATE POLICY "Permitir acceso anon en desarrollo mermas"
-    ON public.lotes_mermas FOR ALL
-    TO anon
-    USING (true)
-    WITH CHECK (length(trim(evidencia_url)) > 0 AND cantidad_piezas > 0);
 
 -- 5. Trigger de actualización automática para updated_at
 DROP TRIGGER IF EXISTS set_mermas_updated_at ON public.lotes_mermas;
@@ -99,26 +95,29 @@ VALUES ('evidencias-mermas', 'evidencias-mermas', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Políticas RLS en storage.objects para permitir subir y consultar las fotos
+-- Permisos mínimos: el bucket es de LECTURA pública (fotos de piezas dañadas, sin
+-- datos personales; la app las muestra con su URL pública) pero SOLO usuarios
+-- autenticados pueden subir. Se restringe tipo (imagen) y tamaño (5 MB). No hay
+-- borrado ni actualización desde la app (las evidencias son inmutables).
+UPDATE storage.buckets
+SET public = true,
+    file_size_limit = 5242880,
+    allowed_mime_types = ARRAY['image/jpeg', 'image/png']
+WHERE id = 'evidencias-mermas';
+
 DROP POLICY IF EXISTS "Lectura publica de fotos de mermas" ON storage.objects;
-CREATE POLICY "Lectura publica de fotos de mermas"
-    ON storage.objects FOR SELECT
-    TO public
-    USING (bucket_id = 'evidencias-mermas');
-
-DROP POLICY IF EXISTS "Subida de fotos de mermas taller" ON storage.objects;
-CREATE POLICY "Subida de fotos de mermas taller"
-    ON storage.objects FOR INSERT
-    TO public
-    WITH CHECK (bucket_id = 'evidencias-mermas');
-
 DROP POLICY IF EXISTS "Actualizacion de fotos de mermas taller" ON storage.objects;
-CREATE POLICY "Actualizacion de fotos de mermas taller"
-    ON storage.objects FOR UPDATE
-    TO public
+DROP POLICY IF EXISTS "Eliminacion de fotos de mermas taller" ON storage.objects;
+DROP POLICY IF EXISTS "Subida de fotos de mermas taller" ON storage.objects;
+DROP POLICY IF EXISTS "Lectura de fotos de mermas autenticados" ON storage.objects;
+DROP POLICY IF EXISTS "Subida de fotos de mermas autenticados" ON storage.objects;
+
+CREATE POLICY "Lectura de fotos de mermas autenticados"
+    ON storage.objects FOR SELECT
+    TO authenticated
     USING (bucket_id = 'evidencias-mermas');
 
-DROP POLICY IF EXISTS "Eliminacion de fotos de mermas taller" ON storage.objects;
-CREATE POLICY "Eliminacion de fotos de mermas taller"
-    ON storage.objects FOR DELETE
-    TO public
-    USING (bucket_id = 'evidencias-mermas');
+CREATE POLICY "Subida de fotos de mermas autenticados"
+    ON storage.objects FOR INSERT
+    TO authenticated
+    WITH CHECK (bucket_id = 'evidencias-mermas');

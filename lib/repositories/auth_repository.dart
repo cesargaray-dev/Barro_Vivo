@@ -37,7 +37,7 @@ class EmailAlreadyInUseException extends AuthException {
 /// Error genérico de red o servidor.
 class NetworkAuthException extends AuthException {
   const NetworkAuthException(String detail)
-      : super('Error de conexión: $detail');
+      : super('Error de conexión. Verifica tu conexión e intenta de nuevo.');
 }
 
 // ── Interfaz ─────────────────────────────────────────────────────────────────

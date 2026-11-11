@@ -276,7 +276,11 @@ void main() {
 
     // Expandir el desglose de insumos en MermaCard en pantalla de 320px
     final botonInsumos = find.textContaining('Insumos consumidos');
-    await tester.ensureVisible(botonInsumos);
+    await tester.dragUntilVisible(
+      botonInsumos,
+      find.byType(CustomScrollView),
+      const Offset(0, -200),
+    );
     await tester.tap(botonInsumos);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

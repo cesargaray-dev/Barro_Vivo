@@ -29,7 +29,7 @@ class MermaException implements Exception {
 /// Error de red o conexión al consultar o persistir mermas.
 class NetworkMermaException extends MermaException {
   const NetworkMermaException(String detail)
-      : super('Error de conexión en el módulo de mermas: $detail');
+      : super('Error de conexión en el módulo de mermas. Verifica tu conexión e intenta de nuevo.');
 }
 
 /// No se encontró el registro de merma solicitado.

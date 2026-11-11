@@ -318,9 +318,10 @@ class _RegistrarMermaSheetState extends State<RegistrarMermaSheet> {
       );
     } catch (e) {
       if (!mounted) return;
+      debugPrint('[RegistrarMermaSheet] Error al obtener fotografía: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al obtener la fotografía: $e'),
+          content: const Text('No se pudo obtener la fotografía. Intenta de nuevo.'),
           backgroundColor: Colors.red.shade700,
         ),
       );

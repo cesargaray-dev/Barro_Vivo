@@ -213,7 +213,8 @@ class MermasViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       _status = MermasStatus.error;
     } catch (e) {
-      _errorMessage = 'Error inesperado al cargar el registro de mermas: $e';
+      debugPrint('[mermas_viewmodel] Error inesperado al cargar el registro de mermas: $e');
+      _errorMessage = 'Error inesperado al cargar el registro de mermas. Intenta de nuevo.';
       _status = MermasStatus.error;
     } finally {
       notifyListeners();
@@ -304,7 +305,8 @@ class MermasViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Error al registrar la merma: $e';
+      debugPrint('[mermas_viewmodel] Error al registrar la merma: $e');
+      _errorMessage = 'Error al registrar la merma. Intenta de nuevo.';
       return false;
     } finally {
       _isSaving = false;
@@ -327,7 +329,8 @@ class MermasViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Error al eliminar el registro de merma: $e';
+      debugPrint('[mermas_viewmodel] Error al eliminar el registro de merma: $e');
+      _errorMessage = 'Error al eliminar el registro de merma. Intenta de nuevo.';
       return false;
     } finally {
       _isSaving = false;

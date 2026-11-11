@@ -12,7 +12,8 @@ Implementada bajo arquitectura **MVVM (Model-View-ViewModel)** estricta, gestion
 * **Rama Principal de Produccion:** `main`
 * **Rama de Integracion Activa:** `develop`
 * **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-07`
-* **Version Actual del PMV:** `1.0.0+1` (Sprint 3 completado)
+* **Version Actual del PMV:** `1.0.0+1` (Sprint 4 en curso: HU-06 en revision)
+* **Tablero de gestion (Trello):** `https://trello.com/b/iggmb32z/barrovivo` (backlog, sprint actual, en curso, en revision y hecho)
 * **Integrantes del Equipo:**
   * Cesar E. Garay Garcia (Desarrollador / Responsable HU-01, HU-03, HU-05, HU-07)
   * Zahir A. Rodriguez Mora (Desarrollador / Revisor de Codigo HU-02, HU-04, HU-06)
@@ -173,12 +174,14 @@ Las dependencias estan fijadas con restricciones semanticas en `pubspec.yaml`:
 | `go_router` | `^14.8.1` | Navegacion declarativa (Navigator 2.0) con proteccion de rutas por rol. |
 | `supabase_flutter` | `^2.9.1` | SDK oficial de Supabase para autenticacion PKCE y conexion PostgreSQL. |
 | `cupertino_icons` | `^1.0.8` | Iconografia complementaria para interfaces iOS. |
+| `image_picker` | `^1.2.4` | Captura de evidencia fotografica con la camara o seleccion desde la galeria (HU-06). |
 | `flutter_lints` (dev) | `^5.0.0` | Reglas recomendadas de estilo, calidad y buenas practicas de Dart. |
 | `flutter_test` (dev) | SDK Flutter | Framework oficial de pruebas unitarias y de widgets. |
 
 ### Verificacion de Estado y Alertas:
-* Ejecucion de `flutter pub outdated`: No existen vulnerabilidades criticas ni advertencias de seguridad pendientes.
-* Analisis estatico: `flutter analyze` reporta **0 errores y 0 advertencias**.
+* **Dependabot** (`.github/dependabot.yml`): revisa semanalmente `pubspec.yaml` y las acciones de GitHub y abre PR con actualizaciones y correcciones de seguridad. Las alertas se revisan en la pestana *Security* del repositorio.
+* **Integracion continua** (`.github/workflows/ci.yml`): en cada push y pull request ejecuta `flutter pub get`, `flutter analyze`, `flutter test` y una busqueda de secretos en el codigo.
+* Revision manual: ejecutar `flutter pub outdated` antes de cada entrega y registrar en el PR las dependencias que no se actualicen, con su justificacion.
 
 ---
 
@@ -193,19 +196,22 @@ flowchart LR
 ```
 
 ### Regla 1: En el telefono del usuario
-* **Sin almacenamiento de contraseñas:** La aplicacion no persiste contraseñas en texto plano ni en `SharedPreferences` basico.
-* **Flujo de autorizacion PKCE:** Supabase Auth utiliza el flujo *Proof Key for Code Exchange (PKCE)*, almacenando tokens de acceso y de refresco cifrados mediante `FlutterSecureStorage` / `EncryptedSharedPreferences` en Android y `Keychain` en iOS.
-* **Control de Acceso en Navegacion (Route Guards):** `AppRouter` evalua reactivamente el rol del usuario en cada cambio de ruta; usuarios no autorizados son redirigidos de inmediato impidiendo accesos forzados.
+* **Sin almacenamiento de contraseñas:** La aplicacion no guarda contraseñas; solo la sesion que administra el SDK de Supabase.
+* **Flujo de autorizacion PKCE:** Supabase Auth utiliza el flujo *Proof Key for Code Exchange (PKCE)*. La sesion (tokens de acceso y de refresco) la persiste el SDK `supabase_flutter` en el almacenamiento local privado de la aplicacion. Mejora pendiente: moverla a almacenamiento cifrado (`flutter_secure_storage`).
+* **Control de Acceso en Navegacion (Route Guards):** `AppRouter` evalua reactivamente el rol del usuario en cada cambio de ruta; usuarios no autorizados son redirigidos. Esto protege la interfaz, **no** sustituye a la autorizacion del servidor (Regla 3).
+* **Permisos minimos del dispositivo (HU-06):** solo `CAMERA` y lectura de imagenes/galeria (`READ_MEDIA_IMAGES`). Los permisos se declaran en `AndroidManifest.xml` e `Info.plist`; si el usuario los niega, la app muestra un mensaje sin cerrarse.
 
 ### Regla 2: En el viaje de los datos (En transito)
-* **Comunicaciones Cifradas:** Todas las llamadas al backend de Supabase viajan estrictamente sobre canales seguros `HTTPS` y `WSS` con cifrado **TLS 1.3**.
-* **Cabeceras de Autorizacion:** Cada solicitud a la API incluye un token criptografico JWT en la cabecera `Authorization: Bearer <TOKEN>`, protegiendo la identidad del solicitante contra intercepciones.
+* **Comunicaciones Cifradas:** Todas las llamadas al backend de Supabase usan `HTTPS` (y `WSS`); la URL del proyecto se valida como `https://` en la configuracion.
+* **Cabeceras de Autorizacion:** Tras iniciar sesion, cada solicitud incluye el JWT del usuario en `Authorization: Bearer <TOKEN>`; nunca se envian credenciales en la URL.
 
 ### Regla 3: En la base de datos (Backend Supabase)
-* **Row Level Security (RLS) Mandatorio:** Todas las tablas de la base de datos tienen activado RLS de forma obligatoria (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`).
-* **Politicas de Acceso Restringidas:** Un usuario solo puede consultar o modificar datos si cuenta con un token de sesion valido y verificado por Supabase Auth.
-* **Validacion en Servidor:** Se configuran restricciones `CHECK` en PostgreSQL para impedir valores negativos o inconsistentes en produccion y finanzas.
-* **Manejo Seguro de Errores:** Las excepciones capturadas por la aplicacion son sanitizadas; ningun mensaje de error expone nombres de tablas, esquemas internos o trazas de la base de datos al usuario final.
+* **Row Level Security (RLS) Mandatorio:** Todas las tablas tienen RLS activo (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`).
+* **Sin acceso anonimo:** Las politicas permiten operar solo al rol `authenticated`. El script `supabase/schema_hardening_rls.sql` elimina cualquier politica `anon` previa; se verifica con la consulta incluida en el propio script (debe devolver 0 filas).
+* **Validacion en Servidor:** Restricciones `CHECK` en PostgreSQL impiden valores negativos o inconsistentes (cantidades > 0, costos >= 0, evidencia fotografica no vacia en mermas, etapas y motivos validos).
+* **Storage con permisos minimos:** el bucket `evidencias-mermas` solo acepta `image/jpeg` e `image/png` de hasta 5 MB, y solo usuarios autenticados pueden subir. No hay politicas de borrado ni actualizacion. La lectura es publica por URL porque las fotos son de piezas danadas y no contienen datos personales.
+* **Limitacion conocida:** el rol (`taller` / `cliente`) se guarda en los metadatos de usuario, por lo que RLS distingue usuarios autenticados pero aun no distingue roles. Mejora prioritaria: mover el rol a `app_metadata` (solo escribible desde el servidor) y filtrarlo en las politicas RLS.
+* **Manejo Seguro de Errores:** La interfaz muestra mensajes genericos; los detalles tecnicos solo se escriben en el log de depuracion (`debugPrint`) y no se muestran al usuario.
 
 ---
 
@@ -214,18 +220,22 @@ flowchart LR
 * **Proveedor en la Nube Elegido:** **Supabase BaaS** (Backend-as-a-Service sobre infraestructura cloud de AWS / PostgreSQL).
 * **Servicios Utilizados:**
   1. **Supabase Auth (GoTrue):** Autenticacion segura de usuarios, registro, manejo de sesiones y asignacion de roles en metadatos.
-  2. **Supabase Database (PostgreSQL):** Persistencia relacional de materias primas, lotes de produccion, historial de etapas y analisis financiero.
+  2. **Supabase Database (PostgreSQL):** Persistencia relacional de materias primas, lotes de produccion, historial de etapas, mermas y analisis financiero.
+  3. **Supabase Storage (HU-06):** Bucket `evidencias-mermas` con las fotografias de evidencia de cada merma. La app sube la imagen tomada con la camara o elegida de la galeria y guarda su URL en `lotes_mermas.evidencia_url`.
 * **Datos Intercambiados:**
   * Credenciales de acceso (correo electronico y contrasena protegida por hash en el servidor).
   * Informacion operativa del taller (nombres de insumos, cantidades de piezas producidas, costos unitarios y etapas de avance).
+  * Registros de merma (lote, etapa, motivo, piezas perdidas, costo estimado) y la fotografia de evidencia (JPEG/PNG, maximo 5 MB).
   * No se intercambian ni almacenan datos financieros sensibles como tarjetas bancarias ni contraseñas sin cifrar.
 * **Distincion entre Valores Publicos y Secretos:**
   * `SUPABASE_ANON_KEY`: Llave publica segura para aplicaciones cliente. Solo permite ejecutar consultas permitidas por las politicas RLS de la base de datos.
   * `SERVICE_ROLE_KEY`: Llave administrativa con permisos totales de superusuario. **NUNCA** se incluye en la app movil, repositorios ni documentacion.
-* **Scripts SQL de Configuracion del Backend:**
-  Disponibles en la carpeta `supabase/`:
-  * `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
-  * `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
+* **Scripts SQL de Configuracion del Backend** (ejecutar en el *SQL Editor* de Supabase, en este orden):
+  1. `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
+  2. `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
+  3. `supabase/schema_hu06_mermas.sql`: Tabla `lotes_mermas` (relacion con `lotes_produccion`) y bucket `evidencias-mermas` con sus politicas.
+  4. `supabase/schema_hardening_rls.sql`: Endurecimiento; elimina politicas `anon` heredadas. Ejecutar siempre al final.
+* **Fallback sin conexion:** si Supabase no responde o las tablas aun no existen, los repositorios usan memoria local para no bloquear la app; esos datos **no** se persisten en la nube.
 
 ---
 
@@ -237,12 +247,14 @@ flowchart LR
   * Excluye archivos locales de configuracion (`.env`, `.env.*`).
   * Excluye archivos de compilacion y rutas locales (`android/local.properties`, `.dart_tool/`, `build/`).
   * Excluye llaves de firma y certificados (`*.keystore`, `*.jks`, `key.properties`, `*.pem`, `*.p12`).
+* **Revision del historial:** los primeros commits de `lib/services/supabase_service.dart` (`015f2c0`, `1e59aa3`, `9d29c7f`) tenian un valor escrito directamente en el codigo, antes de usar `--dart-define-from-file=.env`. Se trata como posible exposicion: el equipo debe verificar en el panel de Supabase (*Project Settings → API*) si esa llave sigue vigente y, de ser asi, regenerarla. Hoy ningun archivo versionado contiene llaves; el CI (`.github/workflows/ci.yml`) falla si detecta `service_role`, `sb_secret_` o un JWT en `lib/`, `test/` o `supabase/`.
+* **Si necesitas reportar un hallazgo de seguridad:** avisa de forma privada a los integrantes del equipo; no publiques el valor en issues ni PR.
 
 ---
 
 ## 11. Pruebas Automatizadas y de Seguridad (Criterio 11)
 
-El proyecto cuenta con una suite completa de **50 pruebas automatizadas** que validan la logica de negocio, accesibilidad, seguridad y rendimiento sin requerir dependencias externas de red:
+El proyecto cuenta con una suite de **pruebas automatizadas** (unitarias y de widgets) que validan logica de negocio, accesibilidad, seguridad y rendimiento sin requerir red:
 
 ```bash
 flutter test
@@ -255,6 +267,8 @@ flutter test
 | **Seguridad y Autenticacion** | `test/features/auth/auth_seguridad_test.dart` | Validacion de roles (`taller` vs `cliente`), rechazo de credenciales invalidas, proteccion de rutas y revocacion de sesion. |
 | **Inventario y Alertas** | `test/features/inventario/inventario_viewmodel_test.dart` | Altas, bajas logicas, edicion y deteccion reactiva de stock minimo (HU-03 / HU-04). |
 | **Produccion y Horno** | `test/features/produccion/produccion_viewmodel_test.dart` | Creacion de lotes, secuencia estricta de las 5 etapas e historial fehaciente (HU-05). |
+| **Mermas (HU-06)** | `test/features/mermas/mermas_viewmodel_test.dart`, `mermas_widget_test.dart` | Registro por etapa y motivo, evidencia fotografica obligatoria (camara/galeria simuladas), calculo de costo por insumos y ausencia de desbordamiento en 320 dp. |
+| **Seguridad de Mermas (HU-06)** | `test/features/mermas/mermas_seguridad_test.dart` | Entradas invalidas (sin foto, 0 piezas, lote vacio) y errores del backend que no exponen tablas ni politicas RLS. |
 | **Widgets de Produccion** | `test/features/produccion/lote_card_widget_test.dart` | Renderizado accesible (48 dp), ausencia de errores de layout y restricciones de tamano. |
 | **Finanzas y Costo Unitario** | `test/features/finanzas/finanzas_viewmodel_test.dart` | Calculo exacto de materia prima + merma prorrateada, rentabilidad y simulador interactivo de precios (HU-07). |
 | **Panel Financiero UI** | `test/features/finanzas/panel_financiero_widget_test.dart` | Desgloses por categoria, ausencia de desbordamiento en pantallas pequenas (360 dp) y filtro de lotes por revisar. |

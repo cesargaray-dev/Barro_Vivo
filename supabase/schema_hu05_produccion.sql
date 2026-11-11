@@ -69,20 +69,10 @@ CREATE POLICY "Permitir insercion historial para usuarios autenticados"
     TO authenticated 
     WITH CHECK (true);
 
--- (Opcional) Políticas de acceso anónimo para pruebas de desarrollo local si se requieren:
+-- Seguridad: se eliminan las políticas de acceso anónimo (rol anon). Solo los
+-- usuarios autenticados pueden operar sobre estas tablas (ver schema_hardening_rls.sql).
 DROP POLICY IF EXISTS "Permitir acceso anon en desarrollo lotes" ON public.lotes_produccion;
-CREATE POLICY "Permitir acceso anon en desarrollo lotes" 
-    ON public.lotes_produccion FOR ALL 
-    TO anon 
-    USING (true) 
-    WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Permitir acceso anon en desarrollo historial" ON public.lotes_historial_etapas;
-CREATE POLICY "Permitir acceso anon en desarrollo historial" 
-    ON public.lotes_historial_etapas FOR ALL 
-    TO anon 
-    USING (true) 
-    WITH CHECK (true);
 
 -- 6. Trigger para actualización automática de updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()

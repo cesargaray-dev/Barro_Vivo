@@ -28,6 +28,12 @@ class SupabaseService {
         '[SupabaseService] ⚠️ ERROR CRÍTICO: SUPABASE_URL o SUPABASE_ANON_KEY no están definidas.\n'
         'Asegúrate de pasar --dart-define-from-file=.env al compilar/ejecutar la aplicación.',
       );
+    } else if (!_supabaseUrl.startsWith('https://')) {
+      // Comunicación segura: se rechaza cualquier URL que no use HTTPS.
+      debugPrint(
+        '[SupabaseService] ⚠️ SUPABASE_URL debe usar https://. Inicialización cancelada.',
+      );
+      return;
     }
 
     try {
