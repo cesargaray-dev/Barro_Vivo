@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:barro_vivo/models/user_model.dart';
 import 'package:barro_vivo/repositories/auth_repository.dart';
 import 'package:barro_vivo/router/app_router.dart';
+import 'package:barro_vivo/services/supabase_service.dart';
 import 'package:barro_vivo/viewmodels/auth_viewmodel.dart';
 
 /// Doble de prueba en memoria para validar la lógica de autenticación y seguridad
@@ -181,8 +182,67 @@ void main() {
       expect(AppRoutes.taller, equals('/taller'));
       expect(AppRoutes.inventario, equals('/taller/inventario'));
       expect(AppRoutes.lotes, equals('/taller/lotes'));
+      expect(AppRoutes.mermas, equals('/taller/mermas'));
       expect(AppRoutes.finanzas, equals('/taller/finanzas'));
       expect(AppRoutes.cliente, equals('/cliente'));
+    });
+
+    test('Sin sesión cualquier ruta protegida redirige obligatoriamente a /login', () {
+      for (final ruta in [
+        AppRoutes.taller,
+        AppRoutes.inventario,
+        AppRoutes.lotes,
+        AppRoutes.mermas,
+        AppRoutes.finanzas,
+        AppRoutes.cliente,
+      ]) {
+        expect(
+          AppRouter.evaluateRedirect(
+            status: AuthStatus.unauthenticated,
+            role: null,
+            location: ruta,
+          ),
+          equals(AppRoutes.login),
+        );
+      }
+    });
+
+    test('Rol cliente no puede acceder a rutas del taller y es redirigido a /cliente', () {
+      for (final rutaTaller in [
+        AppRoutes.taller,
+        AppRoutes.inventario,
+        AppRoutes.lotes,
+        AppRoutes.mermas,
+        AppRoutes.finanzas,
+      ]) {
+        expect(
+          AppRouter.evaluateRedirect(
+            status: AuthStatus.authenticated,
+            role: UserRole.cliente,
+            location: rutaTaller,
+          ),
+          equals(AppRoutes.cliente),
+        );
+      }
+    });
+
+    test('Rol taller no puede acceder a /cliente y es redirigido a /taller', () {
+      expect(
+        AppRouter.evaluateRedirect(
+          status: AuthStatus.authenticated,
+          role: UserRole.taller,
+          location: AppRoutes.cliente,
+        ),
+        equals(AppRoutes.taller),
+      );
+    });
+  });
+
+  group('Criterio 9 y 11: Validación de transporte seguro HTTPS', () {
+    test('Rechaza URLs sin HTTPS o vacías y acepta HTTPS válido', () {
+      expect(SupabaseService.isValidSupabaseUrl('http://ejemplo.supabase.co'), isFalse);
+      expect(SupabaseService.isValidSupabaseUrl(''), isFalse);
+      expect(SupabaseService.isValidSupabaseUrl('https://ejemplo.supabase.co'), isTrue);
     });
   });
 }

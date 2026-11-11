@@ -28,6 +28,9 @@ jobs:
       - name: Análisis estático
         run: flutter analyze
 
+      - name: Revisión de dependencias desactualizadas
+        run: flutter pub outdated || true
+
       - name: Pruebas unitarias y de widgets
         run: flutter test
 
@@ -38,3 +41,4 @@ jobs:
             exit 1
           fi
           echo "Sin secretos detectados."
+

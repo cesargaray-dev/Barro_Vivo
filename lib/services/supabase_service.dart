@@ -19,6 +19,12 @@ class SupabaseService {
   /// Acceso directo al [SupabaseClient] después de [initialize()].
   static SupabaseClient get client => Supabase.instance.client;
 
+  /// Verifica que la URL base configurada use obligatoriamente HTTPS.
+  @visibleForTesting
+  static bool isValidSupabaseUrl(String url) {
+    return url.trim().toLowerCase().startsWith('https://');
+  }
+
   /// Inicializa el SDK de Supabase.
   ///
   /// Debe invocarse una sola vez en [main()] antes de [runApp()].
@@ -28,7 +34,8 @@ class SupabaseService {
         '[SupabaseService] ⚠️ ERROR CRÍTICO: SUPABASE_URL o SUPABASE_ANON_KEY no están definidas.\n'
         'Asegúrate de pasar --dart-define-from-file=.env al compilar/ejecutar la aplicación.',
       );
-    } else if (!_supabaseUrl.startsWith('https://')) {
+      return;
+    } else if (!isValidSupabaseUrl(_supabaseUrl)) {
       // Comunicación segura: se rechaza cualquier URL que no use HTTPS.
       debugPrint(
         '[SupabaseService] ⚠️ SUPABASE_URL debe usar https://. Inicialización cancelada.',
