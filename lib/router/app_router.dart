@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/catalogo/views/carrito_screen.dart';
 import '../features/inventario/views/inventario_screen.dart';
 import '../features/produccion/views/lotes_screen.dart';
 import '../features/mermas/views/mermas_screen.dart';
@@ -48,6 +49,7 @@ class AppRoutes {
   static const String mermas = '/taller/mermas';
   static const String finanzas = '/taller/finanzas';
   static const String cliente = '/cliente';
+  static const String carrito = '/cliente/carrito';
 }
 
 // ── Router factory ────────────────────────────────────────────────────────────
@@ -177,6 +179,11 @@ class AppRouter {
           path: AppRoutes.cliente,
           name: 'cliente',
           builder: (context, state) => const ClienteHomeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.carrito,
+          name: 'carrito',
+          builder: (context, state) => const CarritoScreen(),
         ),
       ],
 
