@@ -252,12 +252,15 @@ flowchart LR
 * **Distincion entre Valores Publicos y Secretos:**
   * `SUPABASE_ANON_KEY`: Llave publica segura para aplicaciones cliente. Solo permite ejecutar consultas permitidas por las politicas RLS de la base de datos.
   * `SERVICE_ROLE_KEY`: Llave administrativa con permisos totales de superusuario. **NUNCA** se incluye en la app movil, repositorios ni documentacion.
-* **Scripts SQL de Configuracion del Backend** (ejecutar en el *SQL Editor* de Supabase, en este orden):
-  1. `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
-  2. `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
-  3. `supabase/schema_hu06_mermas.sql`: Tabla `lotes_mermas` (relacion con `lotes_produccion`) y bucket `evidencias-mermas` con sus politicas.
-  4. `supabase/schema_hu08_hu09_tienda_pedidos.sql`: Tablas `catalogo_piezas`, `pedidos` y `pedidos_historial_estados` con folios unicos, restricciones CHECK y politicas RLS.
-  5. `supabase/schema_hardening_rls.sql`: Endurecimiento; elimina politicas `anon` heredadas. Ejecutar siempre al final.
+* **Scripts SQL de Configuracion del Backend** (ejecutar en el *SQL Editor* de Supabase):
+  * **Opcion recomendada (todo en un solo paso):** ejecutar `supabase/setup_completo_barro_vivo.sql`, que crea todas las tablas (HU-03 a HU-09), el bucket de Storage, politicas RLS, triggers y datos semilla iniciales de manera idempotente.
+  * **O bien por modulo, en este orden:**
+    1. `supabase/schema_hu03_hu04_inventario.sql`: Tabla `materias_primas` con alertas de stock minimo y politicas RLS.
+    2. `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
+    3. `supabase/schema_hu06_mermas.sql`: Tabla `lotes_mermas` (relacion con `lotes_produccion`) y bucket `evidencias-mermas` con sus politicas.
+    4. `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
+    5. `supabase/schema_hu08_hu09_tienda_pedidos.sql`: Tablas `catalogo_piezas`, `pedidos` y `pedidos_historial_estados` con folios unicos, restricciones CHECK y politicas RLS.
+    6. `supabase/schema_hardening_rls.sql`: Endurecimiento; elimina politicas `anon` heredadas. Ejecutar siempre al final.
 * **Fallback sin conexion:** si Supabase no responde o las tablas aun no existen, los repositorios usan memoria local para no bloquear la app; esos datos **no** se persisten en la nube.
 
 ---
