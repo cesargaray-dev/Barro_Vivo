@@ -11,8 +11,8 @@ Implementada bajo arquitectura **MVVM (Model-View-ViewModel)** estricta, gestion
 * **Repositorio Oficial en GitHub:** `https://github.com/cesargaray-dev/Barro_Vivo.git`
 * **Rama Principal de Produccion:** `main`
 * **Rama de Integracion Activa:** `develop`
-* **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-07` y `feature/seguridad-nube` (endurecimiento de seguridad, CI/Dependabot y documentacion)
-* **Version Actual del PMV:** `1.0.0+1` (Sprint 4 en curso: HU-06 en revision)
+* **Ramas de Funcionalidad:** `feature/HU-01` a `feature/HU-09` y `feature/seguridad-nube` (endurecimiento de seguridad, CI/Dependabot y documentacion)
+* **Version Actual del PMV:** `1.0.0+1` (Sprint final: HU-08 y HU-09 implementadas y listas para revision)
 * **Tablero de gestion (Trello):** `https://trello.com/b/iggmb32z/barrovivo` (backlog, sprint actual, en curso, en revision y hecho)
 * **Integrantes del Equipo:**
   * Cesar E. Garay Garcia (Desarrollador / Responsable HU-01, HU-03, HU-05, HU-07)
@@ -29,6 +29,8 @@ Barro Vivo digitaliza el ciclo completo del taller artesanal:
    `Barro Crudo -> Jahuete (1ra Quema) -> Esmaltado -> Decorado a Mano -> Terminado (2da Quema)`.
 4. **Registro de Mermas con Costo Estimado (HU-06):** Captura de piezas perdidas indicando etapa, motivo, evidencia fotografica obligatoria (camara/galeria almacenada en Supabase Storage) y calculo del costo por insumos consumidos.
 5. **Panel Financiero y Costos Reales (HU-07):** Calculo del costo unitario real sumando la materia prima consumida mas la merma prorrateada absorbida por las piezas utiles, desglose de costos por categoria y simulador de utilidad y margen de ganancia frente al precio de venta.
+6. **Catalogo y Carrito del Cliente (HU-08):** Exhibicion de piezas que cumplan la regla critica (`etapa == terminado` y `existencia > 0`), filtros por categoria, buscador y carrito con desglose explicito de subtotales, envio y total a pagar.
+7. **Confirmacion de Pedido y Linea de Tiempo (HU-09):** Emision automatica de folio consecutivo (`BV-XXXX`), estado inicial `En espera de pago`, bandeja `Mis pedidos` para el cliente con timeline de 5 estados (`En espera de pago -> Pagado -> En preparacion -> Enviado -> Entregado`) y bandeja de pedidos en el taller.
 
 ---
 
@@ -148,11 +150,21 @@ lib/
 │   │   ├── repositories/              # MermasRepository (DB + Supabase Storage)
 │   │   ├── viewmodels/                # MermasViewModel (validaciones y filtros)
 │   │   └── views/                     # MermasScreen, MermaCard, RegistrarMermaSheet
-│   └── finanzas/                      # Panel Financiero, Costos y Utilidad (HU-07)
-│       ├── models/                    # AnalisisFinancieroLote, CategoriaCosto, Rentabilidad
-│       ├── repositories/              # FinanzasRepository (calculos y datos semilla)
-│       ├── viewmodels/                # FinanzasViewModel (filtros, simulador de precios)
-│       └── views/                     # PanelFinancieroScreen y graficas de desglose
+│   ├── finanzas/                      # Panel Financiero, Costos y Utilidad (HU-07)
+│   │   ├── models/                    # AnalisisFinancieroLote, CategoriaCosto, Rentabilidad
+│   │   ├── repositories/              # FinanzasRepository (calculos y datos semilla)
+│   │   ├── viewmodels/                # FinanzasViewModel (filtros, simulador de precios)
+│   │   └── views/                     # PanelFinancieroScreen y graficas de desglose
+│   ├── catalogo/                      # Catalogo Comercial y Carrito del Cliente (HU-08)
+│   │   ├── models/                    # PiezaCatalogo, ItemCarrito, ResumenCarrito
+│   │   ├── repositories/              # CatalogoRepository (regla de piezas terminadas con stock)
+│   │   ├── viewmodels/                # CatalogoViewModel (filtros, control de stock y totales)
+│   │   └── views/                     # CarritoScreen y tarjetas comerciales
+│   └── pedidos/                       # Confirmacion de Pedidos y Estados (HU-09)
+│       ├── models/                    # Pedido, EstadoPedido, ItemPedido, HistorialEstadoPedido
+│       ├── repositories/              # PedidosRepository (folios BV-XXXX y transiciones)
+│       ├── viewmodels/                # PedidosViewModel (confirmacion y bandeja taller/cliente)
+│       └── views/                     # MisPedidosScreen, TallerPedidosScreen y PedidoTimeline
 ├── models/                            # Entidades globales (UserModel, UserRole)
 ├── repositories/                      # Contratos globales (AuthRepository)
 ├── viewmodels/                        # ViewModels compartidos (AuthViewModel)
@@ -244,7 +256,8 @@ flowchart LR
   1. `supabase/schema_hu05_produccion.sql`: Tablas `lotes_produccion` y `lotes_historial_etapas` con politicas RLS y triggers.
   2. `supabase/schema_hu07_finanzas.sql`: Tabla `lotes_finanzas` para control de costos, mermas y utilidades con RLS.
   3. `supabase/schema_hu06_mermas.sql`: Tabla `lotes_mermas` (relacion con `lotes_produccion`) y bucket `evidencias-mermas` con sus politicas.
-  4. `supabase/schema_hardening_rls.sql`: Endurecimiento; elimina politicas `anon` heredadas. Ejecutar siempre al final.
+  4. `supabase/schema_hu08_hu09_tienda_pedidos.sql`: Tablas `catalogo_piezas`, `pedidos` y `pedidos_historial_estados` con folios unicos, restricciones CHECK y politicas RLS.
+  5. `supabase/schema_hardening_rls.sql`: Endurecimiento; elimina politicas `anon` heredadas. Ejecutar siempre al final.
 * **Fallback sin conexion:** si Supabase no responde o las tablas aun no existen, los repositorios usan memoria local para no bloquear la app; esos datos **no** se persisten en la nube.
 
 ---
@@ -282,6 +295,8 @@ flutter test
 | **Widgets de Produccion** | `test/features/produccion/lote_card_widget_test.dart` | Renderizado accesible (48 dp), ausencia de errores de layout y restricciones de tamano. |
 | **Finanzas y Costo Unitario** | `test/features/finanzas/finanzas_viewmodel_test.dart` | Calculo exacto de materia prima + merma prorrateada, rentabilidad y simulador interactivo de precios (HU-07). |
 | **Panel Financiero UI** | `test/features/finanzas/panel_financiero_widget_test.dart` | Desgloses por categoria, ausencia de desbordamiento en pantallas pequenas (360 dp) y filtro de lotes por revisar. |
+| **Catalogo y Carrito (HU-08)** | `test/features/catalogo/catalogo_viewmodel_test.dart`, `catalogo_widget_test.dart` | Regla critica de piezas terminadas con existencia > 0, limites de stock y totales explicitos en carrito. |
+| **Pedidos y Timeline (HU-09)** | `test/features/pedidos/pedidos_viewmodel_test.dart`, `pedidos_widget_test.dart` | Emision de folio consecutivo `BV-0128`, descuento de existencia, bandeja Mis pedidos y linea de tiempo de 5 estados. |
 | **Smoke Test Global** | `test/widget_test.dart` | Arranque del composition root y estabilidad del arbol de widgets. |
 
 ### Verificacion del Analizador Estatico:

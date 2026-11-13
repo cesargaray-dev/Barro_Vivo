@@ -26,6 +26,8 @@ import '../features/inventario/views/inventario_screen.dart';
 import '../features/produccion/views/lotes_screen.dart';
 import '../features/mermas/views/mermas_screen.dart';
 import '../features/finanzas/views/panel_financiero_screen.dart';
+import '../features/pedidos/views/mis_pedidos_screen.dart';
+import '../features/pedidos/views/taller_pedidos_screen.dart';
 import '../models/user_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../views/splash_screen.dart';
@@ -48,8 +50,10 @@ class AppRoutes {
   static const String lotes = '/taller/lotes';
   static const String mermas = '/taller/mermas';
   static const String finanzas = '/taller/finanzas';
+  static const String tallerPedidos = '/taller/pedidos';
   static const String cliente = '/cliente';
   static const String carrito = '/cliente/carrito';
+  static const String misPedidos = '/cliente/pedidos';
 }
 
 // ── Router factory ────────────────────────────────────────────────────────────
@@ -173,6 +177,11 @@ class AppRouter {
           name: 'finanzas',
           builder: (context, state) => const PanelFinancieroScreen(),
         ),
+        GoRoute(
+          path: AppRoutes.tallerPedidos,
+          name: 'taller_pedidos',
+          builder: (context, state) => const TallerPedidosScreen(),
+        ),
 
         // ── Área Cliente ──────────────────────────────────────────────────
         GoRoute(
@@ -184,6 +193,11 @@ class AppRouter {
           path: AppRoutes.carrito,
           name: 'carrito',
           builder: (context, state) => const CarritoScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.misPedidos,
+          name: 'mis_pedidos',
+          builder: (context, state) => const MisPedidosScreen(),
         ),
       ],
 
