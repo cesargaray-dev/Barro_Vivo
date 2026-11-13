@@ -56,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_lotes_mermas_activo ON public.lotes_mermas(activo
 -- 3. Habilitar Seguridad a Nivel de Fila (RLS)
 ALTER TABLE public.lotes_mermas ENABLE ROW LEVEL SECURITY;
 
--- 4. Políticas RLS para usuarios autenticados del taller y rol anon
+-- 4. Politicas RLS para usuarios autenticados del taller (sin rol anon)
 DROP POLICY IF EXISTS "Permitir lectura de mermas a usuarios autenticados" ON public.lotes_mermas;
 CREATE POLICY "Permitir lectura de mermas a usuarios autenticados"
     ON public.lotes_mermas FOR SELECT
@@ -121,3 +121,85 @@ CREATE POLICY "Subida de fotos de mermas autenticados"
     ON storage.objects FOR INSERT
     TO authenticated
     WITH CHECK (bucket_id = 'evidencias-mermas');
+
+-- ==============================================================================
+-- 7. DATOS SEMILLA IDEMPOTENTES DE MERMAS (HU-06)
+-- ==============================================================================
+INSERT INTO public.lotes_mermas (
+    id,
+    lote_id,
+    lote_codigo,
+    etapa,
+    motivo,
+    cantidad_piezas,
+    evidencia_url,
+    evidencia_descripcion,
+    insumos_consumidos,
+    costo_unitario_estimado,
+    costo_total_estimado,
+    observaciones,
+    fecha,
+    activo
+)
+VALUES
+    (
+        '33333333-3333-4333-8333-333333333301',
+        '11111111-1111-4111-8111-111111111101',
+        'LOTE-2024-001 (Vajilla Clasica)',
+        'jahuete',
+        'grieta_termica',
+        4,
+        'evidencia://taller/mermas/jahuete_grieta_termica_001.jpg',
+        'Fotografia de 4 platos con fisura radial tras abrir el horno de bizcocho.',
+        '[
+          {"insumo_id":"ins_barro_pasta","nombre":"Barro negro y blanco preparado","unidad":"kg","cantidad_por_pieza":1.20,"costo_por_unidad":18.00,"costo_por_pieza":21.60,"etapa_asociada":"barro_crudo"},
+          {"insumo_id":"ins_gas_jahuete","nombre":"Gas LP (1ra quema de Jahuete)","unidad":"lt","cantidad_por_pieza":0.80,"costo_por_unidad":15.00,"costo_por_pieza":12.00,"etapa_asociada":"jahuete"}
+        ]'::jsonb,
+        33.60,
+        134.40,
+        'Incremento brusco de temperatura en la zona inferior del horno.',
+        timezone('utc'::text, now()) - interval '14 days',
+        true
+    ),
+    (
+        '33333333-3333-4333-8333-333333333302',
+        '11111111-1111-4111-8111-111111111101',
+        'LOTE-2024-001 (Vajilla Clasica)',
+        'decorado',
+        'despostillado',
+        2,
+        'evidencia://taller/mermas/decorado_despostillado_002.jpg',
+        'Fotografia de detalle de borde despostillado en sopera ya esmaltada y plumeada.',
+        '[
+          {"insumo_id":"ins_barro_pasta","nombre":"Barro negro y blanco preparado","unidad":"kg","cantidad_por_pieza":1.20,"costo_por_unidad":18.00,"costo_por_pieza":21.60,"etapa_asociada":"barro_crudo"},
+          {"insumo_id":"ins_gas_jahuete","nombre":"Gas LP (1ra quema de Jahuete)","unidad":"lt","cantidad_por_pieza":0.80,"costo_por_unidad":15.00,"costo_por_pieza":12.00,"etapa_asociada":"jahuete"},
+          {"insumo_id":"ins_esmalte_blanco","nombre":"Esmalte blanco estannifero","unidad":"lt","cantidad_por_pieza":0.25,"costo_por_unidad":60.00,"costo_por_pieza":15.00,"etapa_asociada":"esmaltado"},
+          {"insumo_id":"ins_pigmentos_minerales","nombre":"Pigmentos minerales (Azul cobalto y oxidos)","unidad":"kg","cantidad_por_pieza":0.08,"costo_por_unidad":150.00,"costo_por_pieza":12.00,"etapa_asociada":"decorado"}
+        ]'::jsonb,
+        60.60,
+        121.20,
+        'Roce accidental en mesa de trabajo durante el secado de pigmento cobalto.',
+        timezone('utc'::text, now()) - interval '8 days',
+        true
+    ),
+    (
+        '33333333-3333-4333-8333-333333333303',
+        '11111111-1111-4111-8111-111111111102',
+        'LOTE-2024-002 (Juego de Tazas)',
+        'esmaltado',
+        'rotura',
+        4,
+        'evidencia://taller/mermas/esmaltado_rotura_asa_003.jpg',
+        'Evidencia fotografica de asas desprendidas durante la inmersion en tina de esmalte.',
+        '[
+          {"insumo_id":"ins_barro_pasta","nombre":"Barro negro y blanco preparado","unidad":"kg","cantidad_por_pieza":1.20,"costo_por_unidad":18.00,"costo_por_pieza":21.60,"etapa_asociada":"barro_crudo"},
+          {"insumo_id":"ins_gas_jahuete","nombre":"Gas LP (1ra quema de Jahuete)","unidad":"lt","cantidad_por_pieza":0.80,"costo_por_unidad":15.00,"costo_por_pieza":12.00,"etapa_asociada":"jahuete"},
+          {"insumo_id":"ins_esmalte_blanco","nombre":"Esmalte blanco estannifero","unidad":"lt","cantidad_por_pieza":0.25,"costo_por_unidad":60.00,"costo_por_pieza":15.00,"etapa_asociada":"esmaltado"}
+        ]'::jsonb,
+        48.60,
+        194.40,
+        'Union de barbotina debil en las asas antes del bano blanco.',
+        timezone('utc'::text, now()) - interval '5 days',
+        true
+    )
+ON CONFLICT (id) DO NOTHING;

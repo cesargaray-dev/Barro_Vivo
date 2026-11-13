@@ -18,6 +18,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'features/catalogo/repositories/catalogo_repository.dart';
+import 'features/catalogo/viewmodels/catalogo_viewmodel.dart';
+import 'features/pedidos/repositories/pedidos_repository.dart';
+import 'features/pedidos/viewmodels/pedidos_viewmodel.dart';
 import 'features/inventario/repositories/insumos_repository.dart';
 import 'features/inventario/viewmodels/inventario_viewmodel.dart';
 import 'features/produccion/repositories/produccion_repository.dart';
@@ -48,6 +52,8 @@ Future<void> main() async {
   final ProduccionRepository produccionRepository = SupabaseProduccionRepository();
   final MermasRepository mermasRepository = SupabaseMermasRepository();
   final FinanzasRepository finanzasRepository = SupabaseFinanzasRepository();
+  final CatalogoRepository catalogoRepository = SupabaseCatalogoRepository();
+  final PedidosRepository pedidosRepository = SupabasePedidosRepository();
 
   // ── 3. Levantar la aplicación ──────────────────────────────────────────
   runApp(
@@ -57,6 +63,8 @@ Future<void> main() async {
       produccionRepository: produccionRepository,
       mermasRepository: mermasRepository,
       finanzasRepository: finanzasRepository,
+      catalogoRepository: catalogoRepository,
+      pedidosRepository: pedidosRepository,
     ),
   );
 }
@@ -73,6 +81,8 @@ class BarroVivoApp extends StatefulWidget {
     this.produccionRepository,
     this.mermasRepository,
     this.finanzasRepository,
+    this.catalogoRepository,
+    this.pedidosRepository,
   });
 
   /// Repositorio de autenticación inyectado desde [main].
@@ -90,6 +100,12 @@ class BarroVivoApp extends StatefulWidget {
   /// Repositorio financiero inyectado desde [main] o pruebas.
   final FinanzasRepository? finanzasRepository;
 
+  /// Repositorio comercial de catálogo inyectado desde [main] o pruebas (HU-08).
+  final CatalogoRepository? catalogoRepository;
+
+  /// Repositorio de pedidos y folios inyectado desde [main] o pruebas (HU-09).
+  final PedidosRepository? pedidosRepository;
+
   @override
   State<BarroVivoApp> createState() => _BarroVivoAppState();
 }
@@ -102,6 +118,8 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
   late final ProduccionViewModel _produccionViewModel;
   late final MermasViewModel _mermasViewModel;
   late final FinanzasViewModel _finanzasViewModel;
+  late final CatalogoViewModel _catalogoViewModel;
+  late final PedidosViewModel _pedidosViewModel;
 
   @override
   void initState() {
@@ -119,6 +137,12 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _finanzasViewModel = FinanzasViewModel(
       finanzasRepository: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
     );
+    _catalogoViewModel = CatalogoViewModel(
+      catalogoRepository: widget.catalogoRepository ?? SupabaseCatalogoRepository(),
+    );
+    _pedidosViewModel = PedidosViewModel(
+      pedidosRepository: widget.pedidosRepository ?? SupabasePedidosRepository(),
+    );
   }
 
   @override
@@ -128,6 +152,8 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
     _produccionViewModel.dispose();
     _mermasViewModel.dispose();
     _finanzasViewModel.dispose();
+    _catalogoViewModel.dispose();
+    _pedidosViewModel.dispose();
     super.dispose();
   }
 
@@ -151,6 +177,12 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         Provider<FinanzasRepository>.value(
           value: widget.finanzasRepository ?? SupabaseFinanzasRepository(),
         ),
+        Provider<CatalogoRepository>.value(
+          value: widget.catalogoRepository ?? SupabaseCatalogoRepository(),
+        ),
+        Provider<PedidosRepository>.value(
+          value: widget.pedidosRepository ?? SupabasePedidosRepository(),
+        ),
 
         // ── Capa de ViewModels ────────────────────────────────────────────
         // Se usa ChangeNotifierProvider para que los widgets puedan
@@ -167,6 +199,12 @@ class _BarroVivoAppState extends State<BarroVivoApp> {
         ),
         ChangeNotifierProvider<FinanzasViewModel>.value(
           value: _finanzasViewModel,
+        ),
+        ChangeNotifierProvider<CatalogoViewModel>.value(
+          value: _catalogoViewModel,
+        ),
+        ChangeNotifierProvider<PedidosViewModel>.value(
+          value: _pedidosViewModel,
         ),
       ],
       child: _AppRouter(authViewModel: _authViewModel),
