@@ -62,6 +62,12 @@ class _ClienteHomeScreenState extends State<ClienteHomeScreen> {
         title: const Text('Barro Vivo – Tienda'),
         actions: [
           IconButton(
+            tooltip: 'Mis pedidos',
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            onPressed: () => context.push(AppRoutes.misPedidos),
+            icon: const Icon(Icons.receipt_long_rounded),
+          ),
+          IconButton(
             tooltip: 'Mi Carrito',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: () => context.push(AppRoutes.carrito),
@@ -122,6 +128,18 @@ class _ClienteHomeScreenState extends State<ClienteHomeScreen> {
                         style: textTheme.bodySmall?.copyWith(color: Colors.black54),
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.misPedidos),
+                    icon: const Icon(Icons.timeline_rounded, size: 18),
+                    label: const Text('Mis pedidos'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
                   ),
                 ),
               ],

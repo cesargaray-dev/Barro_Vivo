@@ -184,7 +184,10 @@ void main() {
       expect(AppRoutes.lotes, equals('/taller/lotes'));
       expect(AppRoutes.mermas, equals('/taller/mermas'));
       expect(AppRoutes.finanzas, equals('/taller/finanzas'));
+      expect(AppRoutes.tallerPedidos, equals('/taller/pedidos'));
       expect(AppRoutes.cliente, equals('/cliente'));
+      expect(AppRoutes.carrito, equals('/cliente/carrito'));
+      expect(AppRoutes.misPedidos, equals('/cliente/pedidos'));
     });
 
     test('Sin sesión cualquier ruta protegida redirige obligatoriamente a /login', () {
@@ -194,7 +197,10 @@ void main() {
         AppRoutes.lotes,
         AppRoutes.mermas,
         AppRoutes.finanzas,
+        AppRoutes.tallerPedidos,
         AppRoutes.cliente,
+        AppRoutes.carrito,
+        AppRoutes.misPedidos,
       ]) {
         expect(
           AppRouter.evaluateRedirect(
@@ -214,6 +220,7 @@ void main() {
         AppRoutes.lotes,
         AppRoutes.mermas,
         AppRoutes.finanzas,
+        AppRoutes.tallerPedidos,
       ]) {
         expect(
           AppRouter.evaluateRedirect(
@@ -226,15 +233,21 @@ void main() {
       }
     });
 
-    test('Rol taller no puede acceder a /cliente y es redirigido a /taller', () {
-      expect(
-        AppRouter.evaluateRedirect(
-          status: AuthStatus.authenticated,
-          role: UserRole.taller,
-          location: AppRoutes.cliente,
-        ),
-        equals(AppRoutes.taller),
-      );
+    test('Rol taller no puede acceder a rutas de cliente y es redirigido a /taller', () {
+      for (final rutaCliente in [
+        AppRoutes.cliente,
+        AppRoutes.carrito,
+        AppRoutes.misPedidos,
+      ]) {
+        expect(
+          AppRouter.evaluateRedirect(
+            status: AuthStatus.authenticated,
+            role: UserRole.taller,
+            location: rutaCliente,
+          ),
+          equals(AppRoutes.taller),
+        );
+      }
     });
   });
 

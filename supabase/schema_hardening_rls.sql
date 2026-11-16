@@ -36,7 +36,10 @@ BEGIN
         'lotes_produccion',
         'lotes_historial_etapas',
         'lotes_mermas',
-        'lotes_finanzas'
+        'lotes_finanzas',
+        'catalogo_piezas',
+        'pedidos',
+        'pedidos_historial_estados'
     ]
     LOOP
         IF to_regclass('public.' || tbl) IS NOT NULL THEN

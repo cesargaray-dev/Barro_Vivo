@@ -1,11 +1,17 @@
 // lib/features/catalogo/views/carrito_screen.dart
 //
-// Vista del carrito de compras del cliente con ajuste de cantidades y totales explícitos (HU-08).
+// Vista del carrito de compras del cliente con ajuste de cantidades, totales
+// explícitos (HU-08) y confirmación de pedido con emisión de folio (HU-09).
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../router/app_router.dart';
 import '../../../theme/app_theme.dart';
+import '../../../viewmodels/auth_viewmodel.dart';
+import '../../pedidos/viewmodels/pedidos_viewmodel.dart';
+import '../../pedidos/views/widgets/confirmacion_pedido_dialog.dart';
 import '../models/item_carrito.dart';
 import '../viewmodels/catalogo_viewmodel.dart';
 import 'widgets/catalogo_ui_helpers.dart';
@@ -18,7 +24,7 @@ class CarritoScreen extends StatelessWidget {
     this.onConfirmarPedido,
   });
 
-  /// Callback opcional al confirmar el pedido (conectado en HU-09).
+  /// Callback opcional al confirmar el pedido.
   final Future<void> Function()? onConfirmarPedido;
 
   @override
@@ -46,12 +52,84 @@ class CarritoContentView extends StatelessWidget {
   final VoidCallback? onIrACatalogo;
   final bool isProcessingOrder;
 
+  PedidosViewModel? _tryWatchPedidosVM(BuildContext context) {
+    try {
+      return context.watch<PedidosViewModel>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  AuthViewModel? _tryReadAuthVM(BuildContext context) {
+    try {
+      return context.read<AuthViewModel>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _confirmarCompra(BuildContext context) async {
+    if (onConfirmarPedido != null) {
+      await onConfirmarPedido!();
+      return;
+    }
+
+    final catalogoVM = context.read<CatalogoViewModel>();
+    final resumen = catalogoVM.resumenCarrito;
+    final pedidosVM = context.read<PedidosViewModel?>();
+    if (pedidosVM == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Total explícito listo para confirmar: ${CatalogoUIHelpers.formatMoneda(resumen.totalAPagar)} MXN',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final authVM = _tryReadAuthVM(context);
+    final email = authVM?.currentUser?.email ?? 'cliente@barrovivo.test';
+    final nombre = authVM?.currentUser?.displayName;
+
+    final pedido = await pedidosVM.confirmarPedidoDesdeCarrito(
+      resumen: resumen,
+      clienteEmail: email,
+      clienteNombre: nombre,
+      catalogoViewModel: catalogoVM,
+    );
+
+    if (pedido != null && context.mounted) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => ConfirmacionPedidoDialog(
+          pedido: pedido,
+          onVerMisPedidos: () {
+            if (context.mounted) {
+              context.push(AppRoutes.misPedidos);
+            }
+          },
+        ),
+      );
+    } else if (context.mounted && pedidosVM.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.terracotta,
+          content: Text(pedidosVM.errorMessage ?? 'No se pudo confirmar el pedido.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final catalogoVM = context.watch<CatalogoViewModel>();
+    final pedidosVM = _tryWatchPedidosVM(context);
     final items = catalogoVM.itemsCarrito;
     final resumen = catalogoVM.resumenCarrito;
     final textTheme = Theme.of(context).textTheme;
+    final procesando = isProcessingOrder || (pedidosVM?.isProcessing ?? false);
 
     if (items.isEmpty) {
       return Center(
@@ -157,20 +235,8 @@ class CarritoContentView extends StatelessWidget {
 
         ResumenTotalesCarritoCard(
           resumen: resumen,
-          isProcessing: isProcessingOrder,
-          onProcederAlPago: () async {
-            if (onConfirmarPedido != null) {
-              await onConfirmarPedido!();
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Total explícito listo para confirmar: ${CatalogoUIHelpers.formatMoneda(resumen.totalAPagar)} MXN',
-                  ),
-                ),
-              );
-            }
-          },
+          isProcessing: procesando,
+          onProcederAlPago: () => _confirmarCompra(context),
         ),
         const SizedBox(height: 24),
       ],
@@ -309,4 +375,3 @@ class _ItemCarritoCard extends StatelessWidget {
     );
   }
 }
-

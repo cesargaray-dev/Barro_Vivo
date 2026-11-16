@@ -12,6 +12,7 @@ import '../../features/produccion/viewmodels/produccion_viewmodel.dart';
 import '../../features/mermas/viewmodels/mermas_viewmodel.dart';
 import '../../features/finanzas/viewmodels/finanzas_viewmodel.dart';
 import '../../features/finanzas/views/widgets/finanzas_ui_helpers.dart';
+import '../../features/pedidos/viewmodels/pedidos_viewmodel.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -50,6 +51,11 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
       if (finVM.status == FinanzasStatus.initial) {
         finVM.cargarDatos();
       }
+
+      final pedVM = context.read<PedidosViewModel>();
+      if (pedVM.status == PedidosStatus.initial) {
+        pedVM.cargarPedidos();
+      }
     });
   }
 
@@ -60,6 +66,7 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
     final produccionVM = context.watch<ProduccionViewModel>();
     final mermasVM = context.watch<MermasViewModel>();
     final finanzasVM = context.watch<FinanzasViewModel>();
+    final pedidosVM = context.watch<PedidosViewModel>();
     final textTheme = Theme.of(context).textTheme;
 
     final totalInsumos = inventarioVM.totalInsumos;
@@ -696,6 +703,140 @@ class _TallerHomeScreenState extends State<TallerHomeScreen> {
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tarjeta Destacada 5: Bandeja de Pedidos de Clientes (HU-09)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: AppColors.cobaltBlue.withValues(alpha: 0.3),
+                  width: 1.2,
+                ),
+              ),
+              color: Colors.white,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => context.push(AppRoutes.tallerPedidos),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.cobaltBlue.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_rounded,
+                              color: AppColors.cobaltBlue,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Bandeja de Pedidos',
+                                      style: textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.cobaltBlue,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.terracotta,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'VENTAS',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Folios emitidos, validación de pagos y avance de preparación y envío.',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: Colors.black54,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.black38,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 14),
+
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 8,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.cobaltBlue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              pedidosVM.isLoading && pedidosVM.pedidos.isEmpty
+                                  ? 'Cargando...'
+                                  : '${pedidosVM.totalPedidos} ${pedidosVM.totalPedidos == 1 ? 'pedido' : 'pedidos'}',
+                              style: textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.cobaltBlue,
+                              ),
+                            ),
+                          ),
+                          if (pedidosVM.totalEnEsperaPago > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE65100).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${pedidosVM.totalEnEsperaPago} en espera de pago',
+                                style: textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFE65100),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ],
