@@ -342,6 +342,7 @@ class _ClienteHomeScreenState extends State<ClienteHomeScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.terracotta,
                           foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 48),
                           padding: const EdgeInsets.symmetric(horizontal: 18),
                         ),
                       ),
