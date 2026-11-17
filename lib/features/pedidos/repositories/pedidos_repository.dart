@@ -220,6 +220,9 @@ class SupabasePedidosRepository implements PedidosRepository {
         }
         return remotos;
       }
+      if (clienteEmail != null && clienteEmail.trim().isNotEmpty) {
+        return remotos;
+      }
     } catch (e) {
       debugPrint(
         '[SupabasePedidosRepository] Usando memoria de respaldo al consultar pedidos: $e',
@@ -251,6 +254,24 @@ class SupabasePedidosRepository implements PedidosRepository {
     }
 
     final ahora = DateTime.now();
+
+    // Sincronizar con el máximo consecutivo global en Supabase para evitar
+    // colisiones de folio entre distintos clientes o sesiones.
+    try {
+      final ultimoRes = await _resolvedClient
+          .from(_tablaPedidos)
+          .select('numero_consecutivo')
+          .order('numero_consecutivo', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      final maxRemoto = (ultimoRes?['numero_consecutivo'] as num?)?.toInt();
+      if (maxRemoto != null && maxRemoto > _consecutivoActual) {
+        _consecutivoActual = maxRemoto;
+      }
+    } catch (_) {
+      // Sin conexión o sin Supabase inicializado (tests): continúa con el contador local.
+    }
+
     final siguienteConsecutivo = _consecutivoActual + 1;
     _consecutivoActual = siguienteConsecutivo;
 

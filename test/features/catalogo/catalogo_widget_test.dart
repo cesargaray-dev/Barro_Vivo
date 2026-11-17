@@ -11,6 +11,7 @@ import 'package:barro_vivo/features/catalogo/views/carrito_screen.dart';
 import 'package:barro_vivo/features/produccion/models/etapa_produccion.dart';
 import 'package:barro_vivo/models/user_model.dart';
 import 'package:barro_vivo/repositories/auth_repository.dart';
+import 'package:barro_vivo/theme/app_theme.dart';
 import 'package:barro_vivo/viewmodels/auth_viewmodel.dart';
 import 'package:barro_vivo/views/cliente/cliente_home_screen.dart';
 
@@ -105,8 +106,9 @@ void main() {
           ChangeNotifierProvider<AuthViewModel>.value(value: authVM),
           ChangeNotifierProvider<CatalogoViewModel>.value(value: catalogoVM),
         ],
-        child: const MaterialApp(
-          home: ClienteHomeScreen(),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ClienteHomeScreen(),
         ),
       ),
     );
@@ -118,12 +120,20 @@ void main() {
     expect(find.text('Jarra Oculta En Decorado'), findsNothing);
     expect(find.text('Platón Oculto Sin Stock'), findsNothing);
 
-    // Agregar al carrito
+    // Agregar al carrito con el tema global real (AppTheme.light) y seguir interactuando
     await tester.tap(find.text('Agregar al carrito'));
     await tester.pumpAndSettle();
 
     expect(find.text('En carrito: 1'), findsOneWidget);
     expect(find.text('Ver Carrito'), findsOneWidget);
+
+    // Verifica que el bottomNavigationBar no bloquee toques posteriores
+    await tester.ensureVisible(find.byIcon(Icons.add_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('En carrito: 2'), findsOneWidget);
 
     // Abrir CarritoScreen y verificar totales explícitos
     await tester.pumpWidget(
@@ -132,8 +142,9 @@ void main() {
           ChangeNotifierProvider<AuthViewModel>.value(value: authVM),
           ChangeNotifierProvider<CatalogoViewModel>.value(value: catalogoVM),
         ],
-        child: const MaterialApp(
-          home: CarritoScreen(),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const CarritoScreen(),
         ),
       ),
     );
@@ -142,7 +153,7 @@ void main() {
 
     expect(find.text('Resumen de Totales'), findsOneWidget);
     expect(find.text('Total a pagar'), findsOneWidget);
-    expect(find.text('\$1,600.00 MXN'), findsWidgets);
+    expect(find.text('\$3,200.00 MXN'), findsWidgets);
     expect(find.text('Gratis'), findsOneWidget);
   });
 }

@@ -14,6 +14,7 @@ import 'package:barro_vivo/features/pedidos/views/mis_pedidos_screen.dart';
 import 'package:barro_vivo/features/produccion/models/etapa_produccion.dart';
 import 'package:barro_vivo/models/user_model.dart';
 import 'package:barro_vivo/repositories/auth_repository.dart';
+import 'package:barro_vivo/theme/app_theme.dart';
 import 'package:barro_vivo/viewmodels/auth_viewmodel.dart';
 
 class _FakeAuthRepo implements AuthRepository {
@@ -97,8 +98,9 @@ void main() {
           ChangeNotifierProvider<CatalogoViewModel>.value(value: catalogoVM),
           ChangeNotifierProvider<PedidosViewModel>.value(value: pedidosVM),
         ],
-        child: const MaterialApp(
-          home: CarritoScreen(),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const CarritoScreen(),
         ),
       ),
     );
@@ -126,8 +128,9 @@ void main() {
           ChangeNotifierProvider<CatalogoViewModel>.value(value: catalogoVM),
           ChangeNotifierProvider<PedidosViewModel>.value(value: pedidosVM),
         ],
-        child: const MaterialApp(
-          home: MisPedidosScreen(),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const MisPedidosScreen(),
         ),
       ),
     );
